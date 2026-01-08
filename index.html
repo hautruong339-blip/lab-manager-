@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAB MANAGER LUXURY - Full Control</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            databaseURL: "https://tbkxnub-default-rtdb.asia-southeast1.firebasedatabase.app/"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        window.db = db; window.dbRef = ref; window.dbSet = set; 
+        window.dbOnValue = onValue; window.dbRemove = remove;
+    </script>
+
+    <style>
+        :root {
+            --lux-blue: #004aad;
+            --lux-green: #2ecc71;
+            --lux-orange: #f39c12;
+            --sidebar-dark: #001529;
+        }
+
+        * { box-sizing: border-box; font-family: "Times New Roman", Times, serif; }
+        body { margin: 0; background: #f0f2f5; display: flex; }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px; height: 100vh; position: fixed;
+            background: var(--sidebar-dark); color: white; padding: 20px 15px;
+            overflow-y: auto; z-index: 1000;
+        }
+
+        .brand { text-align: center; margin-bottom: 25px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; }
+        .brand h2 { margin: 0; font-size: 20px; color: var(--lux-green); }
+
+        .nav-btn {
+            width: 100%; padding: 12px 15px; border-radius: 10px; border: none;
+            background: var(--lux-blue); color: white; display: flex; 
+            align-items: center; justify-content: space-between;
+            cursor: pointer; margin-bottom: 8px; font-weight: bold;
+        }
+        .btn-purple { background: #8e44ad; }
+
+        .sub-menu { 
+            max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out;
+            padding-left: 10px; display: flex; flex-direction: column; gap: 4px;
+        }
+        .sub-menu.show { max-height: 1200px; margin-bottom: 15px; }
+
+        .sub-item {
+            padding: 10px 12px; border-radius: 8px; font-size: 14px;
+            cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+            background: rgba(255,255,255,0.05); transition: 0.2s;
+        }
+        .sub-item:hover { background: rgba(255,255,255,0.15); border-left: 4px solid var(--lux-green); }
+
+        /* Main Area */
+        .main { margin-left: 280px; flex-grow: 1; padding: 30px; }
+        .header {
+            background: linear-gradient(90deg, var(--lux-blue), var(--lux-green));
+            padding: 20px; border-radius: 15px; color: white; margin-bottom: 25px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .card { background: white; border-radius: 15px; padding: 25px; border: 1px solid #ddd; }
+        .toolbar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        
+        .search-input { flex-grow: 1; padding: 10px 20px; border-radius: 20px; border: 1px solid #000; min-width: 200px; }
+
+        .btn-action {
+            padding: 10px 20px; border-radius: 20px; border: 1px solid #000;
+            font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.3s;
+        }
+        .btn-blue { background: var(--lux-blue); color: white; }
+        .btn-green { background: var(--lux-green); color: white; }
+        .btn-orange { background: var(--lux-orange); color: white; }
+        .btn-action:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+
+        /* Table */
+        .table-wrap { border: 2px solid #000; border-radius: 10px; overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th { background: #f1f5f9; padding: 12px; border: 1px solid #000; color: var(--lux-blue); }
+        td { padding: 10px; border: 1px solid #000; text-align: center; }
+        tbody tr:hover { background: #e8f4fd; }
+
+        .btn-del-row { color: #e74c3c; border: none; background: none; cursor: pointer; font-size: 16px; }
+        .rotate { transform: rotate(180deg); }
+        .arrow { transition: 0.3s; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="brand">
+        <h2>LAB MANAGER</h2>
+        <small style="color: var(--lux-green)">LUXURY SYSTEM</small>
+    </div>
+
+    <button class="nav-btn" onclick="toggleMenu('menu_chinh', this); loadData('dstong_chinh', 'TỔNG THIẾT BỊ CHÍNH', 'dstong')">
+        <span><i class="fas fa-microscope"></i> TỔNG THIẾT BỊ CHÍNH</span>
+        <i class="fas fa-chevron-down arrow"></i>
+    </button>
+    <div id="menu_chinh" class="sub-menu">
+        <div class="sub-item" onclick="loadData('huyet_hoc', '🩸 HUYẾT HỌC', 'tbchinh', 'Huyết học')"><span>🩸 Huyết học</span></div>
+        <div class="sub-item" onclick="loadData('mien_dich', '🧫 MIỄN DỊCH', 'tbchinh', 'Miễn dịch')"><span>🧫 Miễn dịch</span></div>
+        <div class="sub-item" onclick="loadData('sinh_hoa', '⚗️ SINH HÓA', 'tbchinh', 'Sinh hóa')"><span>⚗️ Sinh hóa</span></div>
+        <div class="sub-item" onclick="loadData('vi_sinh', '🦠 VI SINH', 'tbchinh', 'Vi sinh')"><span>🦠 Vi sinh</span></div>
+        <div class="sub-item" onclick="loadData('shpt', '🧬 SINH HỌC PHÂN TỬ', 'tbchinh', 'SHPT')"><span>🧬 SHPT</span></div>
+    </div>
+
+    <button class="nav-btn btn-purple" onclick="toggleMenu('menu_phu', this); loadData('dstong_phu', 'TỔNG THIẾT BỊ PHỤ', 'dstongphu')">
+        <span><i class="fas fa-tools"></i> TỔNG THIẾT BỊ PHỤ</span>
+        <i class="fas fa-chevron-down arrow"></i>
+    </button>
+    <div id="menu_phu" class="sub-menu">
+        <div class="sub-item" onclick="loadData('may_ly_tam', '🔄 MÁY LY TÂM', 'tbphu', 'Máy ly tâm')"><span>🔄 Máy ly tâm</span></div>
+        <div class="sub-item" onclick="loadData('tu_lanh', '❄️ TỦ LẠNH', 'tbphu', 'Tủ lạnh')"><span>❄️ Tủ lạnh</span></div>
+        <div class="sub-item" onclick="loadData('tu_am_sau', '🌡️ TỦ ÂM SÂU', 'tbphu', 'Tủ âm sâu')"><span>🌡️ Tủ âm sâu</span></div>
+        <div class="sub-item" onclick="loadData('nhiet_ke', '🌡️ NHIỆT KẾ', 'tbphu', 'Nhiệt kế')"><span>🌡️ Nhiệt kế</span></div>
+        <div class="sub-item" onclick="loadData('nhiet_ke_phong', '🏠 NHIỆT KẾ PHÒNG', 'tbphu', 'Nhiệt kế phòng')"><span>🏠 Nhiệt kế phòng</span></div>
+        <div class="sub-item" onclick="loadData('tu_atsh', '🛡️ TỦ ATSH', 'tbphu', 'Tủ ATSH')"><span>🛡️ Tủ ATSH</span></div>
+        <div class="sub-item" onclick="loadData('pipette', '🧪 PIPETTE', 'tbphu', 'Pipette')"><span>🧪 Pipette</span></div>
+        <div class="sub-item" onclick="loadData('noi_hap', '🔥 NỒI HẤP', 'tbphu', 'Nồi hấp')"><span>🔥 Nồi hấp</span></div>
+        <div class="sub-item" onclick="loadData('tu_am', '📦 TỦ ẤM', 'tbphu', 'Tủ ấm')"><span>📦 Tủ ấm</span></div>
+        <div class="sub-item" onclick="loadData('khac', '➕ KHÁC', 'tbphu', 'Khác')"><span>➕ Khác</span></div>
+    </div>
+
+    <div style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+        <div class="sub-item" onclick="loadData('ke_hoach_goc', '📅 SOẠN THẢO KẾ HOẠCH', 'kehoach')"><b>📅 SOẠN THẢO KH</b></div>
+        <div id="archive_kh_list" class="sub-menu show"></div>
+
+        <div class="sub-item" onclick="loadData('kq_hieu_chuan_goc', '📊 SOẠN THẢO KẾT QUẢ', 'kqhc')"><b>📊 SOẠN THẢO KQ</b></div>
+        <div id="archive_kq_list" class="sub-menu show"></div>
+    </div>
+</div>
+
+<div class="main">
+    <div class="header">
+        <div><h1 id="title" style="margin:0; font-size: 22px;">HỆ THỐNG QUẢN LÝ LUXURY</h1></div>
+        <div style="background: rgba(255,255,255,0.2); padding: 5px 15px; border-radius: 20px;">
+            <i class="fas fa-check-circle"></i> Đã đồng bộ
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="toolbar">
+            <input type="text" id="search" class="search-input" placeholder="Tìm kiếm nhanh dữ liệu..." oninput="render()">
+            <button class="btn-action btn-blue" onclick="addRow()"><i class="fas fa-plus"></i> Thêm dòng</button>
+            <button class="btn-action btn-green" onclick="exportExcel()"><i class="fas fa-file-excel"></i> Xuất Excel</button>
+            
+            <button id="btn-xuất-kh" class="btn-action btn-orange" style="display:none;" onclick="exportSnapshot('archives_ke_hoach', 'KH')"><i class="fas fa-save"></i> XUẤT KH</button>
+            <button id="btn-xuất-kq" class="btn-action btn-orange" style="display:none;" onclick="exportSnapshot('archives_ket_qua', 'KQ')"><i class="fas fa-save"></i> XUẤT KQ</button>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead id="thead"></thead>
+                <tbody id="tbody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentMode="", currentKey="", currentGroup="", currentData=[];
+
+const COLS = {
+    dstong: ["Nhóm","Mã thiết bị","Tên thiết bị","Model","Serial","Vị trí","Sản xuất","Cung ứng","Liên hệ","Phụ trách"],
+    tbchinh: ["Nhóm","Mã thiết bị","Tên thiết bị","Model","Serial","Vị trí","Sản xuất","Cung ứng","Liên hệ","Tình trạng","Phụ trách"],
+    dstongphu: ["Nhóm","Mã thiết bị","Tên thiết bị","Chủng loại","Serial","Nhà sản xuất","Nước","Ngày lắp","Cơ sở","Vị trí","Tình trạng"],
+    tbphu: ["Nhóm","Mã thiết bị","Tên thiết bị","Chủng loại","Serial","Nhà sản xuất","Nước","Ngày lắp","Cơ sở","Vị trí","Tình trạng"],
+    kqhc: ["Mã thiết bị","Tên thiết bị","Model","Serial","Ngày hiệu chuẩn","Ngày tiếp theo","Kết quả","Đơn vị","Ghi chú"],
+    kehoach: ["Mã thiết bị","Tên thiết bị","Serial","Thời gian thực hiện","Nội dung yêu cầu","Tiêu chí chấp nhận","Ghi chú"]
+};
+
+function toggleMenu(id, btn) {
+    const m = document.getElementById(id);
+    const a = btn.querySelector('.arrow');
+    m.classList.toggle('show');
+    a.classList.toggle('rotate');
+}
+
+function loadData(key, title, mode, group = "") {
+    currentKey = key; currentMode = mode; currentGroup = group;
+    document.getElementById("title").innerText = title;
+    
+    // Hiển thị nút Xuất KH/KQ khi đúng mục
+    document.getElementById("btn-xuất-kh").style.display = (key === 'ke_hoach_goc') ? "flex" : "none";
+    document.getElementById("btn-xuất-kq").style.display = (key === 'kq_hieu_chuan_goc') ? "flex" : "none";
+
+    window.dbOnValue(window.dbRef(window.db, key), (snapshot) => {
+        const val = snapshot.val();
+        currentData = val ? (Array.isArray(val) ? val : Object.values(val)) : [];
+        render();
+    });
+}
+
+function render() {
+    const cols = COLS[currentMode] || [];
+    const q = document.getElementById("search").value.toLowerCase();
+    document.getElementById("thead").innerHTML = `<tr><th>STT</th>${cols.map(c => `<th>${c}</th>`).join("")}<th>Xóa</th></tr>`;
+    
+    const tbody = document.getElementById("tbody");
+    tbody.innerHTML = "";
+    let displaySTT = 1;
+
+    currentData.forEach((row, index) => {
+        if(q && !Object.values(row).some(v => String(v).toLowerCase().includes(q))) return;
+        
+        const tr = document.createElement("tr");
+        let html = `<td><b>${displaySTT++}</b></td>`;
+        cols.forEach(col => {
+            html += `<td contenteditable="true" onblur="updateCell(${index}, '${col}', this.innerText)">${row[col] || ""}</td>`;
+        });
+        html += `<td><button class="btn-del-row" onclick="deleteRow(${index})">✕</button></td>`;
+        tr.innerHTML = html;
+        tbody.appendChild(tr);
+    });
+}
+
+async function updateCell(idx, col, val) {
+    if(currentData[idx][col] === val.trim()) return;
+    currentData[idx][col] = val.trim();
+    await window.dbSet(window.dbRef(window.db, currentKey), currentData);
+}
+
+async function addRow() {
+    let obj = {};
+    COLS[currentMode].forEach(c => obj[c] = (c === "Nhóm" ? currentGroup : ""));
+    currentData.push(obj);
+    await window.dbSet(window.dbRef(window.db, currentKey), currentData);
+}
+
+async function deleteRow(idx) {
+    if(confirm("Xác nhận xóa dòng này? STT sẽ được tự động cập nhật lại.")) {
+        currentData.splice(idx, 1);
+        await window.dbSet(window.dbRef(window.db, currentKey), currentData);
+    }
+}
+
+async function exportSnapshot(folder, pref) {
+    const name = prompt("Nhập tên bản xuất (Ví dụ: Tháng 1-2026):", pref + "-" + new Date().toLocaleDateString('vi-VN'));
+    if(!name) return;
+    // Chế độ lưu bản snapshot (không ảnh hưởng dữ liệu gốc)
+    await window.dbSet(window.dbRef(window.db, `${folder}/${name}`), currentData);
+    alert("Đã xuất dữ liệu vào ô con thành công!");
+}
+
+function loadArchives() {
+    window.dbOnValue(window.dbRef(window.db, 'archives_ke_hoach'), (s) => renderMenu(s.val(), 'archive_kh_list', 'archives_ke_hoach', 'kehoach'));
+    window.dbOnValue(window.dbRef(window.db, 'archives_ket_qua'), (s) => renderMenu(s.val(), 'archive_kq_list', 'archives_ket_qua', 'kqhc'));
+}
+
+function renderMenu(data, id, folder, mode) {
+    const div = document.getElementById(id); div.innerHTML = "";
+    if(data) Object.keys(data).forEach(k => {
+        const item = document.createElement("div");
+        item.className = "sub-item";
+        item.innerHTML = `
+            <span onclick="loadData('${folder}/${k}', 'BẢN LƯU: ${k}', '${mode}')"><i class="fas fa-file-alt"></i> ${k}</span>
+            <i class="fas fa-trash-alt" style="color:#ff7675; cursor:pointer;" onclick="deleteArchive('${folder}', '${k}')"></i>`;
+        div.appendChild(item);
+    });
+}
+
+async function deleteArchive(folder, k) {
+    if(confirm("Bạn có chắc chắn muốn xóa bản lưu này không?")) {
+        await window.dbRemove(window.dbRef(window.db, `${folder}/${k}`));
+    }
+}
+
+function exportExcel() {
+    const ws = XLSX.utils.json_to_sheet(currentData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    XLSX.writeFile(wb, "Lab_Luxury_Export.xlsx");
+}
+
+window.onload = () => { loadArchives(); loadData('dstong_chinh', 'TỔNG THIẾT BỊ CHÍNH', 'dstong'); };
+</script>
+</body>
+</html>
