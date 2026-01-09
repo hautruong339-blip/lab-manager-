@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LAB MANAGER - FIREBASE MỚI</title>
+    <title>LAB MANAGER - BV UNG BƯỚU</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // Cấu hình Firebase liên kết với địa chỉ bạn cung cấp
         const firebaseConfig = {
             databaseURL: "https://tbkxnub-default-rtdb.asia-southeast1.firebasedatabase.app/"
         };
@@ -19,53 +18,100 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // ĐỊA CHỈ LƯU TRỮ CHI TIẾT THEO YÊU CẦU
         window.dbPath = "users/-OiHXtd0s_Vjtd2VM2fN/name/";
-        
-        window.db = db; 
-        window.dbRef = ref; 
-        window.dbSet = set; 
-        window.dbOnValue = onValue; 
-        window.dbRemove = remove;
+        window.db = db; window.dbRef = ref; window.dbSet = set; 
+        window.dbOnValue = onValue; window.dbRemove = remove;
     </script>
 
     <style>
-        :root { --primary: #1e3a8a; --secondary: #059669; --white: #ffffff; }
-        * { box-sizing: border-box; font-family: "Times New Roman", Times, serif; }
-        body { margin: 0; background: #f0f2f5; display: flex; }
+        :root {
+            --glass: rgba(255, 255, 255, 0.95);
+            --primary: #0f172a;
+            --accent: #3b82f6;
+            --gradient: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            --sidebar-w: 280px;
+        }
 
-        /* Sidebar */
-        .sidebar { width: 300px; height: 100vh; position: fixed; background: #001a4d; padding: 15px; overflow-y: auto; color: white; border-right: 3px solid var(--primary); }
-        .logo-box { text-align: center; margin-bottom: 25px; border-bottom: 1px solid #2d4a8a; padding-bottom: 15px; }
-        .logo-box img { width: 60px; background: white; border-radius: 50%; padding: 5px; }
-        .brand-name { display: block; font-size: 18px; font-weight: bold; margin-top: 10px; color: #3b82f6; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { margin: 0; background: #e2e8f0; display: flex; min-height: 100vh; color: #1e293b; }
 
-        .menu-card { padding: 12px; border-radius: 8px; margin-bottom: 8px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; font-weight: bold; transition: 0.3s; }
-        .btn-orange { background: #d97706; } .btn-blue { background: #2563eb; } .btn-purple { background: #7c3aed; }
+        /* Sidebar lộng lẫy */
+        .sidebar { 
+            width: var(--sidebar-w); 
+            background: var(--primary); 
+            color: white; 
+            padding: 20px 0; 
+            display: flex; 
+            flex-direction: column;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.2);
+            z-index: 100;
+        }
+        .logo-box { padding: 0 20px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .logo-box img { width: 70px; filter: drop-shadow(0 0 8px #3b82f6); background: white; border-radius: 50%; padding: 5px; }
+        .brand-name { display: block; font-size: 20px; font-weight: 800; margin-top: 10px; letter-spacing: 1px; color: #60a5fa; }
 
-        .submenu { display: none; padding-left: 15px; margin-bottom: 10px; border-left: 2px solid #3b82f6; }
-        .sub-item { padding: 10px; border-radius: 6px; margin-bottom: 5px; cursor: pointer; font-size: 14px; background: #1e3a8a; color: white; display: flex; align-items: center; justify-content: space-between; }
-        .sub-item:hover { background: #3b82f6; }
+        .menu-scroll { flex-grow: 1; overflow-y: auto; padding: 15px; }
+        .menu-scroll::-webkit-scrollbar { width: 5px; }
+        .menu-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+
+        .nav-label { font-size: 11px; color: #64748b; font-weight: 700; margin: 20px 0 10px 5px; text-transform: uppercase; letter-spacing: 1.5px; }
+
+        .menu-item { 
+            padding: 12px 15px; border-radius: 10px; margin-bottom: 5px; cursor: pointer; 
+            display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .menu-item:hover { background: rgba(255,255,255,0.1); transform: translateX(5px); }
+        .menu-item i { width: 20px; text-align: center; }
+        
+        .active-blue { background: #2563eb !important; box-shadow: 0 4px 12px rgba(37,99,235,0.4); }
+        .active-orange { background: #ea580c !important; box-shadow: 0 4px 12px rgba(234,88,12,0.4); }
+        .active-purple { background: #9333ea !important; box-shadow: 0 4px 12px rgba(147,51,234,0.4); }
+
+        .submenu { display: none; padding-left: 20px; margin: 5px 0 10px; border-left: 1px solid #334155; }
+        .sub-item { 
+            padding: 8px 15px; font-size: 13px; color: #94a3b8; cursor: pointer; border-radius: 8px;
+            transition: 0.2s; display: flex; justify-content: space-between; align-items: center;
+        }
+        .sub-item:hover { color: white; background: rgba(255,255,255,0.05); }
 
         /* Main Area */
-        .main { margin-left: 300px; padding: 30px; width: calc(100% - 300px); }
-        .top-banner { background: linear-gradient(135deg, #1e3a8a, #059669); padding: 25px; border-radius: 12px; color: white; margin-bottom: 25px; text-align: center; }
-        .content-box { background: var(--white); border-radius: 10px; padding: 20px; border: 1px solid #cbd5e1; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .main { flex-grow: 1; padding: 25px; max-width: calc(100% - var(--sidebar-w)); }
+        .header-card { 
+            background: var(--gradient); padding: 30px; border-radius: 20px; color: white; 
+            box-shadow: 0 10px 25px rgba(30,58,138,0.2); position: relative; overflow: hidden; margin-bottom: 25px;
+        }
+        .header-card::after { content: ""; position: absolute; right: -50px; top: -50px; width: 200px; height: 200px; background: rgba(255,255,255,0.1); border-radius: 50%; }
 
-        .toolbar { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; }
-        .btn { padding: 10px 18px; border-radius: 6px; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; color: white; }
-        .btn-add { background: var(--primary); } .btn-excel { background: var(--secondary); } .btn-save { background: #f59e0b; }
+        .content-box { background: var(--glass); border-radius: 20px; padding: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid white; }
 
-        .search-input { flex-grow: 1; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; }
+        .toolbar { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+        .btn { 
+            padding: 10px 20px; border-radius: 12px; font-weight: 600; border: none; cursor: pointer; 
+            display: flex; align-items: center; gap: 8px; color: white; transition: 0.3s;
+        }
+        .btn:active { transform: scale(0.95); }
+        .btn-add { background: #0f172a; }
+        .btn-excel { background: #10b981; }
+        .btn-save { background: #f59e0b; box-shadow: 0 4px 10px rgba(245,158,11,0.3); }
 
-        .table-container { overflow-x: auto; max-height: 65vh; border: 1px solid #cbd5e1; border-radius: 8px; }
-        table { width: 100%; border-collapse: collapse; min-width: 1100px; }
-        th { background: #f1f5f9; color: #0f172a; padding: 14px; border: 1px solid #cbd5e1; position: sticky; top: 0; z-index: 10; font-size: 14px; }
-        td { padding: 12px; border: 1px solid #cbd5e1; text-align: center; background: white; font-size: 14px; }
+        .search-container { position: relative; flex-grow: 1; }
+        .search-container i { position: absolute; left: 15px; top: 12px; color: #94a3b8; }
+        .search-input { width: 100%; padding: 10px 10px 10px 40px; border-radius: 12px; border: 1px solid #e2e8f0; outline: none; transition: 0.3s; }
+        .search-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+
+        /* Table Style */
+        .table-container { overflow: auto; max-height: 60vh; border-radius: 12px; border: 1px solid #e2e8f0; }
+        table { width: 100%; border-collapse: collapse; background: white; font-size: 13px; }
+        th { background: #f8fafc; color: #475569; padding: 15px; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; position: sticky; top: 0; z-index: 10; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; text-align: center; color: #334155; }
+        tr:hover td { background: #f1f7ff; }
         
-        .arrow { font-size: 10px; transition: 0.3s; }
+        [contenteditable="true"] { outline: none; padding: 5px; border-radius: 4px; }
+        [contenteditable="true"]:focus { background: #fff; box-shadow: inset 0 0 0 1px #3b82f6; }
+
+        .arrow { font-size: 10px; transition: 0.3s; margin-left: auto; }
         .rotated { transform: rotate(90deg); }
-        .nav-label { font-size: 12px; font-weight: bold; color: #94a3b8; margin: 25px 0 10px 0; text-transform: uppercase; }
     </style>
 </head>
 
@@ -77,63 +123,78 @@
         <span class="brand-name">LAB MANAGER</span>
     </div>
 
-    <div class="menu-card btn-orange" onclick="loadData('ds_tong', '📦 TỔNG DANH MỤC CHÍNH', 'dstong')">
-        <span><i class="fas fa-list-ul"></i> TỔNG DM CHÍNH</span>
-    </div>
+    <div class="menu-scroll">
+        <div class="nav-label">Hệ thống danh mục</div>
+        
+        <div class="menu-item active-orange" onclick="loadData('ds_tong', '📦 TỔNG THIẾT BỊ CHÍNH', 'dstong')">
+            <i class="fas fa-layer-group"></i> <span>TỔNG THIẾT BỊ CHÍNH</span>
+        </div>
 
-    <div class="menu-card btn-blue" onclick="toggleSubmenu('sub_chinh', this)">
-        <span><i class="fas fa-microscope"></i> THIẾT BỊ CHÍNH</span>
-        <span class="arrow">▶</span>
-    </div>
-    <div id="sub_chinh" class="submenu">
-        <div class="sub-item" onclick="loadData('tb_chinh/Huyết học', '🩸 HUYẾT HỌC', 'tbchinh', 'Huyết học')">Huyết học</div>
-        <div class="sub-item" onclick="loadData('tb_chinh/Miễn dịch', '🧫 MIỄN DỊCH', 'tbchinh', 'Miễn dịch')">Miễn dịch</div>
-        <div class="sub-item" onclick="loadData('tb_chinh/Sinh hóa', '⚗️ SINH HÓA', 'tbchinh', 'Sinh hóa')">Sinh hóa</div>
-        <div class="sub-item" onclick="loadData('tb_chinh/Vi sinh', '🦠 VI SINH', 'tbchinh', 'Vi sinh')">Vi sinh</div>
-        <div class="sub-item" onclick="loadData('tb_chinh/SHPT', '🧬 SHPT', 'tbchinh', 'SHPT')">SHPT</div>
-    </div>
+        <div class="menu-item active-blue" onclick="toggleSubmenu('sub_chinh', this)">
+            <i class="fas fa-microscope"></i> <span>THIẾT BỊ CHÍNH</span>
+            <span class="arrow">▶</span>
+        </div>
+        <div id="sub_chinh" class="submenu">
+            <div class="sub-item" onclick="loadData('tb_chinh/Huyết học', '🩸 HUYẾT HỌC', 'tbchinh', 'Huyết học')">Huyết học <i class="fas fa-chevron-right"></i></div>
+            <div class="sub-item" onclick="loadData('tb_chinh/Miễn dịch', '🧫 MIỄN DỊCH', 'tbchinh', 'Miễn dịch')">Miễn dịch <i class="fas fa-chevron-right"></i></div>
+            <div class="sub-item" onclick="loadData('tb_chinh/Sinh hóa', '⚗️ SINH HÓA', 'tbchinh', 'Sinh hóa')">Sinh hóa <i class="fas fa-chevron-right"></i></div>
+            <div class="sub-item" onclick="loadData('tb_chinh/Vi sinh', '🦠 VI SINH', 'tbchinh', 'Vi sinh')">Vi sinh <i class="fas fa-chevron-right"></i></div>
+            <div class="sub-item" onclick="loadData('tb_chinh/SHPT', '🧬 SHPT', 'tbchinh', 'SHPT')">SHPT <i class="fas fa-chevron-right"></i></div>
+        </div>
 
-    <div class="menu-card btn-purple" onclick="loadData('ds_tong_phu', '🛠️ TỔNG THIẾT BỊ PHỤ', 'dstongphu')">
-        <span><i class="fas fa-tools"></i> TỔNG THIẾT BỊ PHỤ</span>
-    </div>
+        <div class="menu-item active-purple" onclick="loadData('ds_tong_phu', '🛠️ TỔNG THIẾT BỊ PHỤ', 'dstongphu')">
+            <i class="fas fa-toolbox"></i> <span>TỔNG THIẾT BỊ PHỤ</span>
+        </div>
 
-    <div class="menu-card btn-blue" onclick="toggleSubmenu('sub_phu', this)">
-        <span><i class="fas fa-toolbox"></i> THIẾT BỊ PHỤ</span>
-        <span class="arrow">▶</span>
-    </div>
-    <div id="sub_phu" class="submenu">
-        <div class="sub-item" onclick="loadData('tb_phu/Máy ly tâm', '🔄 MÁY LY TÂM', 'tbphu', 'Máy ly tâm')">Máy ly tâm</div>
-        <div class="sub-item" onclick="loadData('tb_phu/Tủ lạnh', '❄️ TỦ LẠNH', 'tbphu', 'Tủ lạnh')">Tủ lạnh</div>
-        <div class="sub-item" onclick="loadData('tb_phu/Tủ âm sâu', '🧊 TỦ ÂM SÂU', 'tbphu', 'Tủ âm sâu')">Tủ âm sâu</div>
-        <div class="sub-item" onclick="loadData('tb_phu/Nhiệt kế', '🌡️ NHIỆT KẾ', 'tbphu', 'Nhiệt kế')">Nhiệt kế HC</div>
-        <div class="sub-item" onclick="loadData('tb_phu/Nhiệt kế phòng', '🏠 NHIỆT KẾ PHÒNG', 'tbphu', 'Nhiệt kế phòng')">Nhiệt kế phòng</div>
-        <div class="sub-item" onclick="loadData('tb_phu/Tủ ATSH', '🛡️ TỦ ATSH', 'tbphu', 'Tủ ATSH')">Tủ ATSH</div>
-        <div class="sub-item" onclick="loadData('tb_phu/Pipette', '🧪 PIPETTE', 'tbphu', 'Pipette')">Pipette</div>
-        <div class="sub-item" onclick="loadData('tb_phu/Nồi hấp', '♨️ NỒI HẤP', 'tbphu', 'Nồi hấp')">Nồi hấp</div>
-        <div class="sub-item" onclick="loadData('tb_phu/Tủ ấm', '📦 TỦ ẤM', 'tbphu', 'Tủ ấm')">Tủ ấm</div>
-    </div>
+        <div class="menu-item active-blue" onclick="toggleSubmenu('sub_phu', this)">
+            <i class="fas fa-tools"></i> <span>THIẾT BỊ PHỤ</span>
+            <span class="arrow">▶</span>
+        </div>
+        <div id="sub_phu" class="submenu">
+            <div class="sub-item" onclick="loadData('tb_phu/Máy ly tâm', '🔄 MÁY LY TÂM', 'tbphu', 'Máy ly tâm')">Máy ly tâm <i class="fas fa-chevron-right"></i></div>
+            <div class="sub-item" onclick="loadData('tb_phu/Tủ lạnh', '❄️ TỦ LẠNH', 'tbphu', 'Tủ lạnh')">Tủ lạnh <i class="fas fa-chevron-right"></i></div>
+            <div class="sub-item" onclick="loadData('tb_phu/Tủ âm sâu', '🧊 TỦ ÂM SÂU', 'tbphu', 'Tủ âm sâu')">Tủ âm sâu <i class="fas fa-chevron-right"></i></div>
+            <div class="sub-item" onclick="loadData('tb_phu/Nhiệt kế', '🌡️ NHIỆT KẾ', 'tbphu', 'Nhiệt kế')">Nhiệt kế HC <i class="fas fa-chevron-right"></i></div>
+            <div class="sub-item" onclick="loadData('tb_phu/Nhiệt kế phòng', '🏠 NHIỆT KẾ PHÒNG', 'tbphu', 'Nhiệt kế phòng')">Nhiệt kế phòng <i class="fas fa-chevron-right"></i></div>
+            <div class="sub-item" onclick="loadData('tb_phu/Tủ ATSH', '🛡️ TỦ ATSH', 'tbphu', 'Tủ ATSH')">Tủ ATSH <i class="fas fa-chevron-right"></i></div>
+            <div class="sub-item" onclick="loadData('tb_phu/Pipette', '🧪 PIPETTE', 'tbphu', 'Pipette')">Pipette <i class="fas fa-chevron-right"></i></div>
+            <div class="sub-item" onclick="loadData('tb_phu/Nồi hấp', '♨️ NỒI HẤP', 'tbphu', 'Nồi hấp')">Nồi hấp <i class="fas fa-chevron-right"></i></div>
+            <div class="sub-item" onclick="loadData('tb_phu/Tủ ấm', '📦 TỦ ẤM', 'tbphu', 'Tủ ấm')">Tủ ấm <i class="fas fa-chevron-right"></i></div>
+            <div class="sub-item" onclick="loadData('tb_phu/Khác', '➕ THIẾT BỊ KHÁC', 'tbphu', 'Khác')">Khác <i class="fas fa-plus-circle"></i></div>
+        </div>
 
-    <div class="nav-label">Kế Hoạch & Kết Quả</div>
-    <div class="sub-item" onclick="loadData('ke_hoach/Goc', '📅 SOẠN THẢO KẾ HOẠCH', 'kehoach')"><b>📅 Soạn thảo KH</b></div>
-    <div id="archive_kh_list"></div>
-    <div class="sub-item" onclick="loadData('kq_hieu_chuan/Goc', '📊 SOẠN THẢO KẾT QUẢ', 'kqhc')"><b>📊 Soạn thảo KQ</b></div>
-    <div id="archive_kq_list"></div>
+        <div class="nav-label">Hoạt động chuyên môn</div>
+        <div class="menu-item" style="color: #fbbf24;" onclick="loadData('ke_hoach/Goc', '📅 SOẠN THẢO KẾ HOẠCH', 'kehoach')">
+            <i class="fas fa-calendar-check"></i> <b>Kế Hoạch</b>
+        </div>
+        <div id="archive_kh_list"></div>
+        
+        <div class="menu-item" style="color: #34d399;" onclick="loadData('kq_hieu_chuan/Goc', '📊 SOẠN THẢO KẾT QUẢ', 'kqhc')">
+            <i class="fas fa-chart-line"></i> <b>Kết Quả HC</b>
+        </div>
+        <div id="archive_kq_list"></div>
+    </div>
 </div>
 
 <div class="main">
-    <div class="top-banner">
-        <h1 id="title">Hệ Thống Quản Lý Khoa XN</h1>
-        <p>Bệnh viện Ung Bướu TP.HCM - Cơ sở 2</p>
+    <div class="header-card">
+        <h1 id="title" style="margin:0; font-size: 28px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">Hệ Thống Quản Lý Khoa XN</h1>
+        <p style="margin: 10px 0 0; opacity: 0.9; font-weight: 300;">Bệnh viện Ung Bướu TP.HCM - Cơ sở 2</p>
     </div>
 
     <div class="content-box">
         <div class="toolbar">
             <button class="btn btn-add" onclick="addRow()"><i class="fas fa-plus"></i> Thêm Dòng</button>
             <button class="btn btn-excel" onclick="exportExcel()"><i class="fas fa-file-excel"></i> Xuất Excel</button>
-            <button id="btn-snap-kh" class="btn btn-save" style="display:none;" onclick="saveSnapshot('ke_hoach', 'KH')"><i class="fas fa-save"></i> Chốt KH</button>
-            <button id="btn-snap-kq" class="btn btn-save" style="display:none;" onclick="saveSnapshot('kq_hieu_chuan', 'KQ')"><i class="fas fa-save"></i> Chốt KQ</button>
-            <input type="text" id="search" class="search-input" placeholder="Tìm kiếm nhanh..." oninput="render()">
+            <button id="btn-snap-kh" class="btn btn-save" style="display:none;" onclick="saveSnapshot('ke_hoach', 'KH')"><i class="fas fa-calendar-check"></i> Chốt Kế Hoạch</button>
+            <button id="btn-snap-kq" class="btn btn-save" style="display:none;" onclick="saveSnapshot('kq_hieu_chuan', 'KQ')"><i class="fas fa-check-double"></i> Chốt Kết Quả</button>
+            
+            <div class="search-container">
+                <i class="fas fa-search"></i>
+                <input type="text" id="search" class="search-input" placeholder="Tìm kiếm trong dữ liệu..." oninput="render()">
+            </div>
         </div>
+
         <div class="table-container">
             <table><thead id="thead"></thead><tbody id="tbody"></tbody></table>
         </div>
@@ -144,7 +205,7 @@
 let currentMode="", currentKey="", currentGroup="", currentData=[];
 
 const GROUPS_CHINH = ["Huyết học", "Miễn dịch", "Sinh hóa", "Vi sinh", "SHPT"];
-const GROUPS_PHU = ["Máy ly tâm", "Tủ lạnh", "Tủ âm sâu", "Nhiệt kế", "Nhiệt kế phòng", "Tủ ATSH", "Pipette", "Nồi hấp", "Tủ ấm"];
+const GROUPS_PHU = ["Máy ly tâm", "Tủ lạnh", "Tủ âm sâu", "Nhiệt kế", "Nhiệt kế phòng", "Tủ ATSH", "Pipette", "Nồi hấp", "Tủ ấm", "Khác"];
 
 const COLS = {
     dstong: ["Nhóm","Mã thiết bị","Tên thiết bị","Model","Serial","Vị trí","Sản xuất","Cung ứng","Liên hệ","Phụ trách"],
@@ -158,8 +219,18 @@ const COLS = {
 function toggleSubmenu(id, element) {
     const sub = document.getElementById(id);
     const arrow = element.querySelector('.arrow');
-    sub.style.display = (sub.style.display === "block") ? "none" : "block";
-    arrow.classList.toggle('rotated');
+    const allSubs = document.querySelectorAll('.submenu');
+    const allArrows = document.querySelectorAll('.arrow');
+
+    if(sub.style.display !== "block") {
+        allSubs.forEach(s => s.style.display = "none");
+        allArrows.forEach(a => a.classList.remove('rotated'));
+        sub.style.display = "block";
+        arrow.classList.add('rotated');
+    } else {
+        sub.style.display = "none";
+        arrow.classList.remove('rotated');
+    }
 }
 
 function loadData(key, title, mode, group = "") {
@@ -171,11 +242,7 @@ function loadData(key, title, mode, group = "") {
 
     window.dbOnValue(window.dbRef(window.db, window.dbPath + key), (snap) => {
         const val = snap.val();
-        if (val && typeof val === 'object' && !Array.isArray(val)) {
-            currentData = Object.values(val);
-        } else {
-            currentData = val || [];
-        }
+        currentData = val ? (Array.isArray(val) ? val : Object.values(val)) : [];
         render();
     });
 }
@@ -184,7 +251,7 @@ function render() {
     const cols = COLS[currentMode] || [];
     const q = (document.getElementById("search")?.value || "").toLowerCase();
     const tbody = document.getElementById("tbody");
-    document.getElementById("thead").innerHTML = `<tr><th>STT</th>${cols.map(c => `<th>${c}</th>`).join("")}<th>Xóa</th></tr>`;
+    document.getElementById("thead").innerHTML = `<tr><th style="width:50px">STT</th>${cols.map(c => `<th>${c}</th>`).join("")}<th style="width:50px">Xóa</th></tr>`;
     tbody.innerHTML = "";
     
     let stt = 1;
@@ -193,12 +260,12 @@ function render() {
         if(q && !Object.values(row).some(v => String(v).toLowerCase().includes(q))) return;
         
         const tr = document.createElement("tr");
-        let html = `<td><b>${stt++}</b></td>`;
+        let html = `<td><span style="color:#94a3b8; font-weight:bold">${stt++}</span></td>`;
         cols.forEach(c => {
-            const isReadonly = (c === "Nhóm" && (currentMode === 'tbchinh' || currentMode === 'tbphu')) ? 'contenteditable="false" style="background:#f8fafc"' : 'contenteditable="true"';
+            const isReadonly = (c === "Nhóm" && (currentMode === 'tbchinh' || currentMode === 'tbphu')) ? 'contenteditable="false" style="background:#f8fafc; color:#64748b"' : 'contenteditable="true"';
             html += `<td ${isReadonly} onblur="updateCell(${index},'${c}',this.innerText)">${row[c]||""}</td>`;
         });
-        html += `<td><i class="fas fa-trash-alt" style="color:red; cursor:pointer" onclick="deleteRow(${index})"></i></td>`;
+        html += `<td><i class="fas fa-trash-alt" style="color:#f87171; cursor:pointer" onclick="deleteRow(${index})"></i></td>`;
         tr.innerHTML = html;
         tbody.appendChild(tr);
     });
@@ -207,16 +274,11 @@ function render() {
 async function updateCell(index, col, val) {
     const newVal = val.trim();
     if (currentData[index][col] === newVal) return;
-    
     currentData[index][col] = newVal;
-    
     await safeSave(currentKey, currentData);
 
-    if (currentMode === 'dstong') {
-        syncAll('dstong', 'tb_chinh', GROUPS_CHINH);
-    } else if (currentMode === 'dstongphu') {
-        syncAll('dstongphu', 'tb_phu', GROUPS_PHU);
-    }
+    if (currentMode === 'dstong') syncAll('dstong', 'tb_chinh', GROUPS_CHINH);
+    if (currentMode === 'dstongphu') syncAll('dstongphu', 'tb_phu', GROUPS_PHU);
 }
 
 async function safeSave(key, data) {
@@ -231,8 +293,10 @@ async function syncAll(masterMode, folder, groups) {
 
     currentData.forEach(item => {
         if (!item) return;
-        const itemGrp = (item["Nhóm"] || "").trim().toLowerCase();
-        const found = groups.find(g => g.toLowerCase() === itemGrp);
+        const itemGrp = (item["Nhóm"] || "").trim();
+        // Kiểm tra khớp nhóm hoặc đưa vào nhóm Khác nếu không khớp danh sách
+        let found = groups.find(g => g.toLowerCase() === itemGrp.toLowerCase());
+        
         if (found) {
             let row = {};
             const subCols = COLS[masterMode === 'dstong' ? 'tbchinh' : 'tbphu'];
@@ -255,17 +319,16 @@ async function addRow() {
 }
 
 async function deleteRow(index) {
-    if(!confirm("Xóa dòng này?")) return;
+    if(!confirm("Xác nhận xóa dòng này?")) return;
     currentData.splice(index, 1);
     await safeSave(currentKey, currentData);
-    
     if (currentMode === 'dstong') syncAll('dstong', 'tb_chinh', GROUPS_CHINH);
     if (currentMode === 'dstongphu') syncAll('dstongphu', 'tb_phu', GROUPS_PHU);
 }
 
 async function saveSnapshot(folder, prefix) {
     const d = new Date();
-    const name = prompt("Tên tệp lưu:", `${prefix} - ${d.getDate()}-${d.getMonth()+1}-${d.getFullYear()}`);
+    const name = prompt("Tên phiên bản lưu:", `${prefix} - ${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`);
     if(!name) return;
     const dataCopy = JSON.parse(JSON.stringify(currentData.filter(i => i !== null)));
     await safeSave(`${folder}/Archives/${name}`, dataCopy);
@@ -280,8 +343,8 @@ function renderArchives(data, id, folder, mode) {
     const div = document.getElementById(id); div.innerHTML = "";
     if(data) Object.keys(data).forEach(k => {
         const item = document.createElement("div"); item.className="sub-item";
-        item.innerHTML = `<span style="flex-grow:1" onclick="loadData('${folder}/Archives/${k}','BẢN LƯU: ${k}','${mode}')">${k}</span>
-                          <i class="fas fa-trash" style="font-size:11px;cursor:pointer" onclick="deleteArchive('${folder}','${k}')"></i>`;
+        item.innerHTML = `<span style="flex-grow:1" onclick="loadData('${folder}/Archives/${k}','BẢN LƯU: ${k}','${mode}')"><i class="fas fa-history"></i> ${k}</span>
+                          <i class="fas fa-times" style="font-size:11px;cursor:pointer;color:#f87171" onclick="deleteArchive('${folder}','${k}')"></i>`;
         div.appendChild(item);
     });
 }
@@ -293,11 +356,14 @@ async function deleteArchive(f, k) {
 function exportExcel() {
     const ws = XLSX.utils.json_to_sheet(currentData.filter(i => i !== null));
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "LabData");
-    XLSX.writeFile(wb, "LabManager.xlsx");
+    XLSX.utils.book_append_sheet(wb, ws, "Dữ liệu");
+    XLSX.writeFile(wb, `LabData_${new Date().getTime()}.xlsx`);
 }
 
-window.onload = () => { loadArchives(); loadData('ds_tong', '📦 TỔNG DANH MỤC CHÍNH', 'dstong'); };
+window.onload = () => { 
+    loadArchives(); 
+    loadData('ds_tong', '📦 TỔNG THIẾT BỊ CHÍNH', 'dstong'); 
+};
 </script>
 </body>
 </html>
