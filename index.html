@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LAB MANAGER LUXURY - Full Control</title>
+    <title>LAB MANAGER - FIREBASE MỚI</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
@@ -11,6 +11,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+        // Cấu hình Firebase liên kết với địa chỉ bạn cung cấp
         const firebaseConfig = {
             databaseURL: "https://tbkxnub-default-rtdb.asia-southeast1.firebasedatabase.app/"
         };
@@ -18,156 +19,123 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        window.db = db; window.dbRef = ref; window.dbSet = set; 
-        window.dbOnValue = onValue; window.dbRemove = remove;
+        // ĐỊA CHỈ LƯU TRỮ CHI TIẾT THEO YÊU CẦU
+        window.dbPath = "users/-OiHXtd0s_Vjtd2VM2fN/name/";
+        
+        window.db = db; 
+        window.dbRef = ref; 
+        window.dbSet = set; 
+        window.dbOnValue = onValue; 
+        window.dbRemove = remove;
     </script>
 
     <style>
-        :root {
-            --lux-blue: #004aad;
-            --lux-green: #2ecc71;
-            --lux-orange: #f39c12;
-            --sidebar-dark: #001529;
-        }
-
+        :root { --primary: #1e3a8a; --secondary: #059669; --white: #ffffff; }
         * { box-sizing: border-box; font-family: "Times New Roman", Times, serif; }
         body { margin: 0; background: #f0f2f5; display: flex; }
 
         /* Sidebar */
-        .sidebar {
-            width: 280px; height: 100vh; position: fixed;
-            background: var(--sidebar-dark); color: white; padding: 20px 15px;
-            overflow-y: auto; z-index: 1000;
-        }
+        .sidebar { width: 300px; height: 100vh; position: fixed; background: #001a4d; padding: 15px; overflow-y: auto; color: white; border-right: 3px solid var(--primary); }
+        .logo-box { text-align: center; margin-bottom: 25px; border-bottom: 1px solid #2d4a8a; padding-bottom: 15px; }
+        .logo-box img { width: 60px; background: white; border-radius: 50%; padding: 5px; }
+        .brand-name { display: block; font-size: 18px; font-weight: bold; margin-top: 10px; color: #3b82f6; }
 
-        .brand { text-align: center; margin-bottom: 25px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; }
-        .brand h2 { margin: 0; font-size: 20px; color: var(--lux-green); }
+        .menu-card { padding: 12px; border-radius: 8px; margin-bottom: 8px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; font-weight: bold; transition: 0.3s; }
+        .btn-orange { background: #d97706; } .btn-blue { background: #2563eb; } .btn-purple { background: #7c3aed; }
 
-        .nav-btn {
-            width: 100%; padding: 12px 15px; border-radius: 10px; border: none;
-            background: var(--lux-blue); color: white; display: flex; 
-            align-items: center; justify-content: space-between;
-            cursor: pointer; margin-bottom: 8px; font-weight: bold;
-        }
-        .btn-purple { background: #8e44ad; }
-
-        .sub-menu { 
-            max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out;
-            padding-left: 10px; display: flex; flex-direction: column; gap: 4px;
-        }
-        .sub-menu.show { max-height: 1200px; margin-bottom: 15px; }
-
-        .sub-item {
-            padding: 10px 12px; border-radius: 8px; font-size: 14px;
-            cursor: pointer; display: flex; justify-content: space-between; align-items: center;
-            background: rgba(255,255,255,0.05); transition: 0.2s;
-        }
-        .sub-item:hover { background: rgba(255,255,255,0.15); border-left: 4px solid var(--lux-green); }
+        .submenu { display: none; padding-left: 15px; margin-bottom: 10px; border-left: 2px solid #3b82f6; }
+        .sub-item { padding: 10px; border-radius: 6px; margin-bottom: 5px; cursor: pointer; font-size: 14px; background: #1e3a8a; color: white; display: flex; align-items: center; justify-content: space-between; }
+        .sub-item:hover { background: #3b82f6; }
 
         /* Main Area */
-        .main { margin-left: 280px; flex-grow: 1; padding: 30px; }
-        .header {
-            background: linear-gradient(90deg, var(--lux-blue), var(--lux-green));
-            padding: 20px; border-radius: 15px; color: white; margin-bottom: 25px;
-            display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
+        .main { margin-left: 300px; padding: 30px; width: calc(100% - 300px); }
+        .top-banner { background: linear-gradient(135deg, #1e3a8a, #059669); padding: 25px; border-radius: 12px; color: white; margin-bottom: 25px; text-align: center; }
+        .content-box { background: var(--white); border-radius: 10px; padding: 20px; border: 1px solid #cbd5e1; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
 
-        .card { background: white; border-radius: 15px; padding: 25px; border: 1px solid #ddd; }
-        .toolbar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .toolbar { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; }
+        .btn { padding: 10px 18px; border-radius: 6px; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; color: white; }
+        .btn-add { background: var(--primary); } .btn-excel { background: var(--secondary); } .btn-save { background: #f59e0b; }
+
+        .search-input { flex-grow: 1; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; }
+
+        .table-container { overflow-x: auto; max-height: 65vh; border: 1px solid #cbd5e1; border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; min-width: 1100px; }
+        th { background: #f1f5f9; color: #0f172a; padding: 14px; border: 1px solid #cbd5e1; position: sticky; top: 0; z-index: 10; font-size: 14px; }
+        td { padding: 12px; border: 1px solid #cbd5e1; text-align: center; background: white; font-size: 14px; }
         
-        .search-input { flex-grow: 1; padding: 10px 20px; border-radius: 20px; border: 1px solid #000; min-width: 200px; }
-
-        .btn-action {
-            padding: 10px 20px; border-radius: 20px; border: 1px solid #000;
-            font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.3s;
-        }
-        .btn-blue { background: var(--lux-blue); color: white; }
-        .btn-green { background: var(--lux-green); color: white; }
-        .btn-orange { background: var(--lux-orange); color: white; }
-        .btn-action:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
-
-        /* Table */
-        .table-wrap { border: 2px solid #000; border-radius: 10px; overflow: hidden; }
-        table { width: 100%; border-collapse: collapse; background: white; }
-        th { background: #f1f5f9; padding: 12px; border: 1px solid #000; color: var(--lux-blue); }
-        td { padding: 10px; border: 1px solid #000; text-align: center; }
-        tbody tr:hover { background: #e8f4fd; }
-
-        .btn-del-row { color: #e74c3c; border: none; background: none; cursor: pointer; font-size: 16px; }
-        .rotate { transform: rotate(180deg); }
-        .arrow { transition: 0.3s; }
+        .arrow { font-size: 10px; transition: 0.3s; }
+        .rotated { transform: rotate(90deg); }
+        .nav-label { font-size: 12px; font-weight: bold; color: #94a3b8; margin: 25px 0 10px 0; text-transform: uppercase; }
     </style>
 </head>
+
 <body>
 
 <div class="sidebar">
-    <div class="brand">
-        <h2>LAB MANAGER</h2>
-        <small style="color: var(--lux-green)">LUXURY SYSTEM</small>
+    <div class="logo-box">
+        <img src="https://bvub.vn/wp-content/uploads/2021/05/logo-ub.png" alt="Logo">
+        <span class="brand-name">LAB MANAGER</span>
     </div>
 
-    <button class="nav-btn" onclick="toggleMenu('menu_chinh', this); loadData('dstong_chinh', 'TỔNG THIẾT BỊ CHÍNH', 'dstong')">
-        <span><i class="fas fa-microscope"></i> TỔNG THIẾT BỊ CHÍNH</span>
-        <i class="fas fa-chevron-down arrow"></i>
-    </button>
-    <div id="menu_chinh" class="sub-menu">
-        <div class="sub-item" onclick="loadData('huyet_hoc', '🩸 HUYẾT HỌC', 'tbchinh', 'Huyết học')"><span>🩸 Huyết học</span></div>
-        <div class="sub-item" onclick="loadData('mien_dich', '🧫 MIỄN DỊCH', 'tbchinh', 'Miễn dịch')"><span>🧫 Miễn dịch</span></div>
-        <div class="sub-item" onclick="loadData('sinh_hoa', '⚗️ SINH HÓA', 'tbchinh', 'Sinh hóa')"><span>⚗️ Sinh hóa</span></div>
-        <div class="sub-item" onclick="loadData('vi_sinh', '🦠 VI SINH', 'tbchinh', 'Vi sinh')"><span>🦠 Vi sinh</span></div>
-        <div class="sub-item" onclick="loadData('shpt', '🧬 SINH HỌC PHÂN TỬ', 'tbchinh', 'SHPT')"><span>🧬 SHPT</span></div>
+    <div class="menu-card btn-orange" onclick="loadData('ds_tong', '📦 TỔNG DANH MỤC CHÍNH', 'dstong')">
+        <span><i class="fas fa-list-ul"></i> TỔNG DM CHÍNH</span>
     </div>
 
-    <button class="nav-btn btn-purple" onclick="toggleMenu('menu_phu', this); loadData('dstong_phu', 'TỔNG THIẾT BỊ PHỤ', 'dstongphu')">
+    <div class="menu-card btn-blue" onclick="toggleSubmenu('sub_chinh', this)">
+        <span><i class="fas fa-microscope"></i> THIẾT BỊ CHÍNH</span>
+        <span class="arrow">▶</span>
+    </div>
+    <div id="sub_chinh" class="submenu">
+        <div class="sub-item" onclick="loadData('tb_chinh/Huyết học', '🩸 HUYẾT HỌC', 'tbchinh', 'Huyết học')">Huyết học</div>
+        <div class="sub-item" onclick="loadData('tb_chinh/Miễn dịch', '🧫 MIỄN DỊCH', 'tbchinh', 'Miễn dịch')">Miễn dịch</div>
+        <div class="sub-item" onclick="loadData('tb_chinh/Sinh hóa', '⚗️ SINH HÓA', 'tbchinh', 'Sinh hóa')">Sinh hóa</div>
+        <div class="sub-item" onclick="loadData('tb_chinh/Vi sinh', '🦠 VI SINH', 'tbchinh', 'Vi sinh')">Vi sinh</div>
+        <div class="sub-item" onclick="loadData('tb_chinh/SHPT', '🧬 SHPT', 'tbchinh', 'SHPT')">SHPT</div>
+    </div>
+
+    <div class="menu-card btn-purple" onclick="loadData('ds_tong_phu', '🛠️ TỔNG THIẾT BỊ PHỤ', 'dstongphu')">
         <span><i class="fas fa-tools"></i> TỔNG THIẾT BỊ PHỤ</span>
-        <i class="fas fa-chevron-down arrow"></i>
-    </button>
-    <div id="menu_phu" class="sub-menu">
-        <div class="sub-item" onclick="loadData('may_ly_tam', '🔄 MÁY LY TÂM', 'tbphu', 'Máy ly tâm')"><span>🔄 Máy ly tâm</span></div>
-        <div class="sub-item" onclick="loadData('tu_lanh', '❄️ TỦ LẠNH', 'tbphu', 'Tủ lạnh')"><span>❄️ Tủ lạnh</span></div>
-        <div class="sub-item" onclick="loadData('tu_am_sau', '🌡️ TỦ ÂM SÂU', 'tbphu', 'Tủ âm sâu')"><span>🌡️ Tủ âm sâu</span></div>
-        <div class="sub-item" onclick="loadData('nhiet_ke', '🌡️ NHIỆT KẾ', 'tbphu', 'Nhiệt kế')"><span>🌡️ Nhiệt kế</span></div>
-        <div class="sub-item" onclick="loadData('nhiet_ke_phong', '🏠 NHIỆT KẾ PHÒNG', 'tbphu', 'Nhiệt kế phòng')"><span>🏠 Nhiệt kế phòng</span></div>
-        <div class="sub-item" onclick="loadData('tu_atsh', '🛡️ TỦ ATSH', 'tbphu', 'Tủ ATSH')"><span>🛡️ Tủ ATSH</span></div>
-        <div class="sub-item" onclick="loadData('pipette', '🧪 PIPETTE', 'tbphu', 'Pipette')"><span>🧪 Pipette</span></div>
-        <div class="sub-item" onclick="loadData('noi_hap', '🔥 NỒI HẤP', 'tbphu', 'Nồi hấp')"><span>🔥 Nồi hấp</span></div>
-        <div class="sub-item" onclick="loadData('tu_am', '📦 TỦ ẤM', 'tbphu', 'Tủ ấm')"><span>📦 Tủ ấm</span></div>
-        <div class="sub-item" onclick="loadData('khac', '➕ KHÁC', 'tbphu', 'Khác')"><span>➕ Khác</span></div>
     </div>
 
-    <div style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
-        <div class="sub-item" onclick="loadData('ke_hoach_goc', '📅 SOẠN THẢO KẾ HOẠCH', 'kehoach')"><b>📅 SOẠN THẢO KH</b></div>
-        <div id="archive_kh_list" class="sub-menu show"></div>
-
-        <div class="sub-item" onclick="loadData('kq_hieu_chuan_goc', '📊 SOẠN THẢO KẾT QUẢ', 'kqhc')"><b>📊 SOẠN THẢO KQ</b></div>
-        <div id="archive_kq_list" class="sub-menu show"></div>
+    <div class="menu-card btn-blue" onclick="toggleSubmenu('sub_phu', this)">
+        <span><i class="fas fa-toolbox"></i> THIẾT BỊ PHỤ</span>
+        <span class="arrow">▶</span>
     </div>
+    <div id="sub_phu" class="submenu">
+        <div class="sub-item" onclick="loadData('tb_phu/Máy ly tâm', '🔄 MÁY LY TÂM', 'tbphu', 'Máy ly tâm')">Máy ly tâm</div>
+        <div class="sub-item" onclick="loadData('tb_phu/Tủ lạnh', '❄️ TỦ LẠNH', 'tbphu', 'Tủ lạnh')">Tủ lạnh</div>
+        <div class="sub-item" onclick="loadData('tb_phu/Tủ âm sâu', '🧊 TỦ ÂM SÂU', 'tbphu', 'Tủ âm sâu')">Tủ âm sâu</div>
+        <div class="sub-item" onclick="loadData('tb_phu/Nhiệt kế', '🌡️ NHIỆT KẾ', 'tbphu', 'Nhiệt kế')">Nhiệt kế HC</div>
+        <div class="sub-item" onclick="loadData('tb_phu/Nhiệt kế phòng', '🏠 NHIỆT KẾ PHÒNG', 'tbphu', 'Nhiệt kế phòng')">Nhiệt kế phòng</div>
+        <div class="sub-item" onclick="loadData('tb_phu/Tủ ATSH', '🛡️ TỦ ATSH', 'tbphu', 'Tủ ATSH')">Tủ ATSH</div>
+        <div class="sub-item" onclick="loadData('tb_phu/Pipette', '🧪 PIPETTE', 'tbphu', 'Pipette')">Pipette</div>
+        <div class="sub-item" onclick="loadData('tb_phu/Nồi hấp', '♨️ NỒI HẤP', 'tbphu', 'Nồi hấp')">Nồi hấp</div>
+        <div class="sub-item" onclick="loadData('tb_phu/Tủ ấm', '📦 TỦ ẤM', 'tbphu', 'Tủ ấm')">Tủ ấm</div>
+    </div>
+
+    <div class="nav-label">Kế Hoạch & Kết Quả</div>
+    <div class="sub-item" onclick="loadData('ke_hoach/Goc', '📅 SOẠN THẢO KẾ HOẠCH', 'kehoach')"><b>📅 Soạn thảo KH</b></div>
+    <div id="archive_kh_list"></div>
+    <div class="sub-item" onclick="loadData('kq_hieu_chuan/Goc', '📊 SOẠN THẢO KẾT QUẢ', 'kqhc')"><b>📊 Soạn thảo KQ</b></div>
+    <div id="archive_kq_list"></div>
 </div>
 
 <div class="main">
-    <div class="header">
-        <div><h1 id="title" style="margin:0; font-size: 22px;">HỆ THỐNG QUẢN LÝ LUXURY</h1></div>
-        <div style="background: rgba(255,255,255,0.2); padding: 5px 15px; border-radius: 20px;">
-            <i class="fas fa-check-circle"></i> Đã đồng bộ
-        </div>
+    <div class="top-banner">
+        <h1 id="title">Hệ Thống Quản Lý Khoa XN</h1>
+        <p>Bệnh viện Ung Bướu TP.HCM - Cơ sở 2</p>
     </div>
 
-    <div class="card">
+    <div class="content-box">
         <div class="toolbar">
-            <input type="text" id="search" class="search-input" placeholder="Tìm kiếm nhanh dữ liệu..." oninput="render()">
-            <button class="btn-action btn-blue" onclick="addRow()"><i class="fas fa-plus"></i> Thêm dòng</button>
-            <button class="btn-action btn-green" onclick="exportExcel()"><i class="fas fa-file-excel"></i> Xuất Excel</button>
-            
-            <button id="btn-xuất-kh" class="btn-action btn-orange" style="display:none;" onclick="exportSnapshot('archives_ke_hoach', 'KH')"><i class="fas fa-save"></i> XUẤT KH</button>
-            <button id="btn-xuất-kq" class="btn-action btn-orange" style="display:none;" onclick="exportSnapshot('archives_ket_qua', 'KQ')"><i class="fas fa-save"></i> XUẤT KQ</button>
+            <button class="btn btn-add" onclick="addRow()"><i class="fas fa-plus"></i> Thêm Dòng</button>
+            <button class="btn btn-excel" onclick="exportExcel()"><i class="fas fa-file-excel"></i> Xuất Excel</button>
+            <button id="btn-snap-kh" class="btn btn-save" style="display:none;" onclick="saveSnapshot('ke_hoach', 'KH')"><i class="fas fa-save"></i> Chốt KH</button>
+            <button id="btn-snap-kq" class="btn btn-save" style="display:none;" onclick="saveSnapshot('kq_hieu_chuan', 'KQ')"><i class="fas fa-save"></i> Chốt KQ</button>
+            <input type="text" id="search" class="search-input" placeholder="Tìm kiếm nhanh..." oninput="render()">
         </div>
-
-        <div class="table-wrap">
-            <table>
-                <thead id="thead"></thead>
-                <tbody id="tbody"></tbody>
-            </table>
+        <div class="table-container">
+            <table><thead id="thead"></thead><tbody id="tbody"></tbody></table>
         </div>
     </div>
 </div>
@@ -175,119 +143,161 @@
 <script>
 let currentMode="", currentKey="", currentGroup="", currentData=[];
 
+const GROUPS_CHINH = ["Huyết học", "Miễn dịch", "Sinh hóa", "Vi sinh", "SHPT"];
+const GROUPS_PHU = ["Máy ly tâm", "Tủ lạnh", "Tủ âm sâu", "Nhiệt kế", "Nhiệt kế phòng", "Tủ ATSH", "Pipette", "Nồi hấp", "Tủ ấm"];
+
 const COLS = {
     dstong: ["Nhóm","Mã thiết bị","Tên thiết bị","Model","Serial","Vị trí","Sản xuất","Cung ứng","Liên hệ","Phụ trách"],
     tbchinh: ["Nhóm","Mã thiết bị","Tên thiết bị","Model","Serial","Vị trí","Sản xuất","Cung ứng","Liên hệ","Tình trạng","Phụ trách"],
-    dstongphu: ["Nhóm","Mã thiết bị","Tên thiết bị","Chủng loại","Serial","Nhà sản xuất","Nước","Ngày lắp","Cơ sở","Vị trí","Tình trạng"],
-    tbphu: ["Nhóm","Mã thiết bị","Tên thiết bị","Chủng loại","Serial","Nhà sản xuất","Nước","Ngày lắp","Cơ sở","Vị trí","Tình trạng"],
+    dstongphu: ["Nhóm","Mã thiết bị","Tên thiết bị","Chủng loại","Serial","Nhà sản xuất","Nước","Ngày lắp","Vị trí","Tình trạng"],
+    tbphu: ["Nhóm","Mã thiết bị","Tên thiết bị","Chủng loại","Serial","Nhà sản xuất","Nước","Ngày lắp","Vị trí","Tình trạng"],
     kqhc: ["Mã thiết bị","Tên thiết bị","Model","Serial","Ngày hiệu chuẩn","Ngày tiếp theo","Kết quả","Đơn vị","Ghi chú"],
     kehoach: ["Mã thiết bị","Tên thiết bị","Serial","Thời gian thực hiện","Nội dung yêu cầu","Tiêu chí chấp nhận","Ghi chú"]
 };
 
-function toggleMenu(id, btn) {
-    const m = document.getElementById(id);
-    const a = btn.querySelector('.arrow');
-    m.classList.toggle('show');
-    a.classList.toggle('rotate');
+function toggleSubmenu(id, element) {
+    const sub = document.getElementById(id);
+    const arrow = element.querySelector('.arrow');
+    sub.style.display = (sub.style.display === "block") ? "none" : "block";
+    arrow.classList.toggle('rotated');
 }
 
 function loadData(key, title, mode, group = "") {
     currentKey = key; currentMode = mode; currentGroup = group;
     document.getElementById("title").innerText = title;
     
-    // Hiển thị nút Xuất KH/KQ khi đúng mục
-    document.getElementById("btn-xuất-kh").style.display = (key === 'ke_hoach_goc') ? "flex" : "none";
-    document.getElementById("btn-xuất-kq").style.display = (key === 'kq_hieu_chuan_goc') ? "flex" : "none";
+    document.getElementById("btn-snap-kh").style.display = (key === 'ke_hoach/Goc') ? "flex" : "none";
+    document.getElementById("btn-snap-kq").style.display = (key === 'kq_hieu_chuan/Goc') ? "flex" : "none";
 
-    window.dbOnValue(window.dbRef(window.db, key), (snapshot) => {
-        const val = snapshot.val();
-        currentData = val ? (Array.isArray(val) ? val : Object.values(val)) : [];
+    window.dbOnValue(window.dbRef(window.db, window.dbPath + key), (snap) => {
+        const val = snap.val();
+        if (val && typeof val === 'object' && !Array.isArray(val)) {
+            currentData = Object.values(val);
+        } else {
+            currentData = val || [];
+        }
         render();
     });
 }
 
 function render() {
     const cols = COLS[currentMode] || [];
-    const q = document.getElementById("search").value.toLowerCase();
-    document.getElementById("thead").innerHTML = `<tr><th>STT</th>${cols.map(c => `<th>${c}</th>`).join("")}<th>Xóa</th></tr>`;
-    
+    const q = (document.getElementById("search")?.value || "").toLowerCase();
     const tbody = document.getElementById("tbody");
+    document.getElementById("thead").innerHTML = `<tr><th>STT</th>${cols.map(c => `<th>${c}</th>`).join("")}<th>Xóa</th></tr>`;
     tbody.innerHTML = "";
-    let displaySTT = 1;
-
+    
+    let stt = 1;
     currentData.forEach((row, index) => {
+        if (!row) return; 
         if(q && !Object.values(row).some(v => String(v).toLowerCase().includes(q))) return;
         
         const tr = document.createElement("tr");
-        let html = `<td><b>${displaySTT++}</b></td>`;
-        cols.forEach(col => {
-            html += `<td contenteditable="true" onblur="updateCell(${index}, '${col}', this.innerText)">${row[col] || ""}</td>`;
+        let html = `<td><b>${stt++}</b></td>`;
+        cols.forEach(c => {
+            const isReadonly = (c === "Nhóm" && (currentMode === 'tbchinh' || currentMode === 'tbphu')) ? 'contenteditable="false" style="background:#f8fafc"' : 'contenteditable="true"';
+            html += `<td ${isReadonly} onblur="updateCell(${index},'${c}',this.innerText)">${row[c]||""}</td>`;
         });
-        html += `<td><button class="btn-del-row" onclick="deleteRow(${index})">✕</button></td>`;
+        html += `<td><i class="fas fa-trash-alt" style="color:red; cursor:pointer" onclick="deleteRow(${index})"></i></td>`;
         tr.innerHTML = html;
         tbody.appendChild(tr);
     });
 }
 
-async function updateCell(idx, col, val) {
-    if(currentData[idx][col] === val.trim()) return;
-    currentData[idx][col] = val.trim();
-    await window.dbSet(window.dbRef(window.db, currentKey), currentData);
-}
+async function updateCell(index, col, val) {
+    const newVal = val.trim();
+    if (currentData[index][col] === newVal) return;
+    
+    currentData[index][col] = newVal;
+    
+    await safeSave(currentKey, currentData);
 
-async function addRow() {
-    let obj = {};
-    COLS[currentMode].forEach(c => obj[c] = (c === "Nhóm" ? currentGroup : ""));
-    currentData.push(obj);
-    await window.dbSet(window.dbRef(window.db, currentKey), currentData);
-}
-
-async function deleteRow(idx) {
-    if(confirm("Xác nhận xóa dòng này? STT sẽ được tự động cập nhật lại.")) {
-        currentData.splice(idx, 1);
-        await window.dbSet(window.dbRef(window.db, currentKey), currentData);
+    if (currentMode === 'dstong') {
+        syncAll('dstong', 'tb_chinh', GROUPS_CHINH);
+    } else if (currentMode === 'dstongphu') {
+        syncAll('dstongphu', 'tb_phu', GROUPS_PHU);
     }
 }
 
-async function exportSnapshot(folder, pref) {
-    const name = prompt("Nhập tên bản xuất (Ví dụ: Tháng 1-2026):", pref + "-" + new Date().toLocaleDateString('vi-VN'));
+async function safeSave(key, data) {
+    if (!key) return;
+    const cleanData = data.filter(item => item !== null);
+    await window.dbSet(window.dbRef(window.db, window.dbPath + key), cleanData);
+}
+
+async function syncAll(masterMode, folder, groups) {
+    let buckets = {};
+    groups.forEach(g => buckets[g] = []);
+
+    currentData.forEach(item => {
+        if (!item) return;
+        const itemGrp = (item["Nhóm"] || "").trim().toLowerCase();
+        const found = groups.find(g => g.toLowerCase() === itemGrp);
+        if (found) {
+            let row = {};
+            const subCols = COLS[masterMode === 'dstong' ? 'tbchinh' : 'tbphu'];
+            subCols.forEach(c => row[c] = item[c] || "");
+            row["Nhóm"] = found;
+            buckets[found].push(row);
+        }
+    });
+
+    for (const g of groups) {
+        await safeSave(`${folder}/${g}`, buckets[g]);
+    }
+}
+
+async function addRow() {
+    let obj = {}; 
+    COLS[currentMode].forEach(c => obj[c] = (c === "Nhóm" ? currentGroup : ""));
+    currentData.push(obj);
+    await safeSave(currentKey, currentData);
+}
+
+async function deleteRow(index) {
+    if(!confirm("Xóa dòng này?")) return;
+    currentData.splice(index, 1);
+    await safeSave(currentKey, currentData);
+    
+    if (currentMode === 'dstong') syncAll('dstong', 'tb_chinh', GROUPS_CHINH);
+    if (currentMode === 'dstongphu') syncAll('dstongphu', 'tb_phu', GROUPS_PHU);
+}
+
+async function saveSnapshot(folder, prefix) {
+    const d = new Date();
+    const name = prompt("Tên tệp lưu:", `${prefix} - ${d.getDate()}-${d.getMonth()+1}-${d.getFullYear()}`);
     if(!name) return;
-    // Chế độ lưu bản snapshot (không ảnh hưởng dữ liệu gốc)
-    await window.dbSet(window.dbRef(window.db, `${folder}/${name}`), currentData);
-    alert("Đã xuất dữ liệu vào ô con thành công!");
+    const dataCopy = JSON.parse(JSON.stringify(currentData.filter(i => i !== null)));
+    await safeSave(`${folder}/Archives/${name}`, dataCopy);
 }
 
 function loadArchives() {
-    window.dbOnValue(window.dbRef(window.db, 'archives_ke_hoach'), (s) => renderMenu(s.val(), 'archive_kh_list', 'archives_ke_hoach', 'kehoach'));
-    window.dbOnValue(window.dbRef(window.db, 'archives_ket_qua'), (s) => renderMenu(s.val(), 'archive_kq_list', 'archives_ket_qua', 'kqhc'));
+    window.dbOnValue(window.dbRef(window.db, window.dbPath + 'ke_hoach/Archives'), (snap) => renderArchives(snap.val(), 'archive_kh_list', 'ke_hoach', 'kehoach'));
+    window.dbOnValue(window.dbRef(window.db, window.dbPath + 'kq_hieu_chuan/Archives'), (snap) => renderArchives(snap.val(), 'archive_kq_list', 'kq_hieu_chuan', 'kqhc'));
 }
 
-function renderMenu(data, id, folder, mode) {
+function renderArchives(data, id, folder, mode) {
     const div = document.getElementById(id); div.innerHTML = "";
     if(data) Object.keys(data).forEach(k => {
-        const item = document.createElement("div");
-        item.className = "sub-item";
-        item.innerHTML = `
-            <span onclick="loadData('${folder}/${k}', 'BẢN LƯU: ${k}', '${mode}')"><i class="fas fa-file-alt"></i> ${k}</span>
-            <i class="fas fa-trash-alt" style="color:#ff7675; cursor:pointer;" onclick="deleteArchive('${folder}', '${k}')"></i>`;
+        const item = document.createElement("div"); item.className="sub-item";
+        item.innerHTML = `<span style="flex-grow:1" onclick="loadData('${folder}/Archives/${k}','BẢN LƯU: ${k}','${mode}')">${k}</span>
+                          <i class="fas fa-trash" style="font-size:11px;cursor:pointer" onclick="deleteArchive('${folder}','${k}')"></i>`;
         div.appendChild(item);
     });
 }
 
-async function deleteArchive(folder, k) {
-    if(confirm("Bạn có chắc chắn muốn xóa bản lưu này không?")) {
-        await window.dbRemove(window.dbRef(window.db, `${folder}/${k}`));
-    }
+async function deleteArchive(f, k) {
+    if(confirm(`Xóa bản lưu ${k}?`)) await window.dbRemove(window.dbRef(window.db, window.dbPath + `${f}/Archives/${k}`));
 }
 
 function exportExcel() {
-    const ws = XLSX.utils.json_to_sheet(currentData);
+    const ws = XLSX.utils.json_to_sheet(currentData.filter(i => i !== null));
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-    XLSX.writeFile(wb, "Lab_Luxury_Export.xlsx");
+    XLSX.utils.book_append_sheet(wb, ws, "LabData");
+    XLSX.writeFile(wb, "LabManager.xlsx");
 }
 
-window.onload = () => { loadArchives(); loadData('dstong_chinh', 'TỔNG THIẾT BỊ CHÍNH', 'dstong'); };
+window.onload = () => { loadArchives(); loadData('ds_tong', '📦 TỔNG DANH MỤC CHÍNH', 'dstong'); };
 </script>
 </body>
 </html>
