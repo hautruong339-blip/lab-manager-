@@ -9,7 +9,7 @@
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, set, onValue, remove, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             databaseURL: "https://tbkxnub-default-rtdb.asia-southeast1.firebasedatabase.app/"
@@ -20,63 +20,49 @@
 
         window.dbPath = "users/-OiHXtd0s_Vjtd2VM2fN/name/";
         window.db = db; window.dbRef = ref; window.dbSet = set; 
-        window.dbOnValue = onValue; window.dbRemove = remove; window.dbUpdate = update;
+        window.dbOnValue = onValue; window.dbRemove = remove; window.dbUpdate = update; window.dbGet = get;
     </script>
 
     <style>
-        :root {
-            --glass: rgba(255, 255, 255, 0.95);
-            --primary: #0f172a;
-            --accent: #3b82f6;
-            --gradient: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-            --sidebar-w: 280px;
-        }
-
+        :root { --glass: rgba(255, 255, 255, 0.95); --primary: #0f172a; --accent: #3b82f6; --gradient: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); --sidebar-w: 280px; }
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { margin: 0; background: #e2e8f0; display: flex; min-height: 100vh; color: #1e293b; }
-
-        /* Sidebar */
-        .sidebar { width: var(--sidebar-w); background: var(--primary); color: white; padding: 20px 0; display: flex; flex-direction: column; box-shadow: 4px 0 15px rgba(0,0,0,0.2); z-index: 100; }
+        .sidebar { width: var(--sidebar-w); background: var(--primary); color: white; padding: 20px 0; display: flex; flex-direction: column; box-shadow: 4px 0 15px rgba(0,0,0,0.2); z-index: 100; user-select: none; }
         .logo-box { padding: 0 20px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
         .logo-box img { width: 70px; background: white; border-radius: 50%; padding: 5px; }
         .brand-name { display: block; font-size: 20px; font-weight: 800; margin-top: 10px; color: #60a5fa; }
-
         .menu-scroll { flex-grow: 1; overflow-y: auto; padding: 15px; }
         .nav-label { font-size: 11px; color: #64748b; font-weight: 700; margin: 20px 0 10px 5px; text-transform: uppercase; letter-spacing: 1.5px; }
-
         .menu-item { padding: 12px 15px; border-radius: 10px; margin-bottom: 5px; cursor: pointer; display: flex; align-items: center; gap: 12px; font-size: 14px; transition: 0.3s; }
         .menu-item:hover { background: rgba(255,255,255,0.1); }
         .active-orange { background: #ea580c !important; }
-        .active-blue { background: #2563eb !important; }
+        .active-blue { background: #2563eb !important; font-weight: bold; }
         .active-purple { background: #9333ea !important; }
-
         .submenu { display: none; padding-left: 15px; margin: 5px 0 10px; border-left: 1px solid #334155; }
         .sub-item { padding: 8px 12px; font-size: 13px; color: #94a3b8; cursor: pointer; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
         .sub-item:hover { color: white; background: rgba(255,255,255,0.05); }
-
-        /* Main */
         .main { flex-grow: 1; padding: 25px; max-width: calc(100% - var(--sidebar-w)); }
-        .header-card { background: var(--gradient); padding: 30px; border-radius: 20px; color: white; margin-bottom: 25px; }
+        .header-card { background: var(--gradient); padding: 30px; border-radius: 20px; color: white; margin-bottom: 25px; user-select: none; }
         .content-box { background: var(--glass); border-radius: 20px; padding: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
-
-        .toolbar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .toolbar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; user-select: none; }
         .btn { padding: 10px 15px; border-radius: 10px; font-weight: 600; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; color: white; transition: 0.2s; font-size: 13px; }
         .btn-add { background: #0f172a; }
         .btn-excel { background: #10b981; }
-        .btn-sync { background: #ef4444; box-shadow: 0 0 10px rgba(239, 68, 68, 0.3); }
+        .btn-sync { background: #ef4444; }
         .btn-save { background: #f59e0b; }
-
         .search-container { position: relative; flex-grow: 1; min-width: 200px; }
         .search-container i { position: absolute; left: 15px; top: 12px; color: #94a3b8; }
         .search-input { width: 100%; padding: 10px 10px 10px 40px; border-radius: 12px; border: 1px solid #e2e8f0; outline: none; }
-
         .table-container { overflow: auto; max-height: 60vh; border-radius: 12px; border: 1px solid #e2e8f0; }
-        table { width: 100%; border-collapse: collapse; background: white; font-size: 12px; }
-        th { background: #f8fafc; padding: 12px; position: sticky; top: 0; z-index: 10; border-bottom: 2px solid #e2e8f0; }
-        td { padding: 10px; border-bottom: 1px solid #f1f5f9; text-align: center; }
-        tr.selected td { background-color: #e0f2fe !important; }
+        table { width: 100%; border-collapse: collapse; background: white; font-size: 12px; table-layout: auto; }
+        th { background: #f8fafc; padding: 12px; position: sticky; top: 0; z-index: 10; border-bottom: 2px solid #e2e8f0; white-space: nowrap; user-select: none; }
+        td { padding: 10px; border-bottom: 1px solid #f1f5f9; text-align: center; min-width: 80px; position: relative; white-space: pre-wrap; outline: none !important; transition: 0.1s; cursor: cell; }
+        
+        td.cell-selected { box-shadow: inset 0 0 0 2px #3b82f6 !important; background: #eff6ff !important; z-index: 5; }
 
-        [contenteditable="true"]:focus { outline: 2px solid #3b82f6; background: #fff; }
+        tr.returned { opacity: 0.4; filter: grayscale(0.8); background: #fee2e2 !important; }
+        .return-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #dc2626; font-weight: 900; font-size: 14px; pointer-events: none; z-index: 10; display: none; text-transform: uppercase; }
+        tr.returned .return-overlay { display: block; }
         .arrow { font-size: 10px; transition: 0.3s; margin-left: auto; }
         .rotated { transform: rotate(90deg); }
     </style>
@@ -85,19 +71,11 @@
 <body>
 
 <div class="sidebar">
-    <div class="logo-box">
-        <img src="https://bvub.vn/wp-content/uploads/2021/05/logo-ub.png" alt="Logo">
-        <span class="brand-name">LAB MANAGER</span>
-    </div>
-
+    <div class="logo-box"><img src="https://bvub.vn/wp-content/uploads/2021/05/logo-ub.png" alt="Logo"><span class="brand-name">LAB MANAGER</span></div>
     <div class="menu-scroll">
         <div class="nav-label">Hệ thống danh mục</div>
-        <div class="menu-item active-orange" onclick="loadData('ds_tong', '📦 TỔNG THIẾT BỊ CHÍNH', 'dstong')">
-            <i class="fas fa-layer-group"></i> <span>TỔNG THIẾT BỊ CHÍNH</span>
-        </div>
-        <div class="menu-item active-blue" onclick="toggleSubmenu('sub_chinh', this)">
-            <i class="fas fa-microscope"></i> <span>THIẾT BỊ CHÍNH</span> <span class="arrow">▶</span>
-        </div>
+        <div class="menu-item active-orange" onclick="loadData('ds_tong', '📦 TỔNG THIẾT BỊ CHÍNH', 'dstong')"><i class="fas fa-layer-group"></i> <span>TỔNG THIẾT BỊ CHÍNH</span></div>
+        <div class="menu-item active-blue" onclick="toggleSubmenu('sub_chinh', this)"><i class="fas fa-microscope"></i> <span>THIẾT BỊ CHÍNH</span> <span class="arrow">▶</span></div>
         <div id="sub_chinh" class="submenu">
             <div class="sub-item" onclick="loadData('tb_chinh/Huyết học', '🩸 HUYẾT HỌC', 'tbchinh', 'Huyết học')">Huyết học</div>
             <div class="sub-item" onclick="loadData('tb_chinh/Miễn dịch', '🧫 MIỄN DỊCH', 'tbchinh', 'Miễn dịch')">Miễn dịch</div>
@@ -105,44 +83,34 @@
             <div class="sub-item" onclick="loadData('tb_chinh/Vi sinh', '🦠 VI SINH', 'tbchinh', 'Vi sinh')">Vi sinh</div>
             <div class="sub-item" onclick="loadData('tb_chinh/SHPT', '🧬 SHPT', 'tbchinh', 'SHPT')">SHPT</div>
         </div>
-
-        <div class="menu-item active-purple" onclick="loadData('ds_tong_phu', '🛠️ TỔNG THIẾT BỊ PHỤ', 'dstongphu')">
-            <i class="fas fa-toolbox"></i> <span>TỔNG THIẾT BỊ PHỤ</span>
-        </div>
-        <div class="menu-item active-blue" onclick="toggleSubmenu('sub_phu', this)">
-            <i class="fas fa-tools"></i> <span>THIẾT BỊ PHỤ</span> <span class="arrow">▶</span>
-        </div>
+        
+        <div class="menu-item active-purple" onclick="loadData('ds_tong_phu', '🛠️ TỔNG THIẾT BỊ PHỤ', 'dstongphu')"><i class="fas fa-toolbox"></i> <span>TỔNG THIẾT BỊ PHỤ</span></div>
+        <div class="menu-item active-blue" onclick="toggleSubmenu('sub_phu', this)"><i class="fas fa-tools"></i> <span>THIẾT BỊ PHỤ</span> <span class="arrow">▶</span></div>
         <div id="sub_phu" class="submenu">
             <div class="sub-item" onclick="loadData('tb_phu/Máy ly tâm', '🔄 MÁY LY TÂM', 'tbphu', 'Máy ly tâm')">Máy ly tâm</div>
             <div class="sub-item" onclick="loadData('tb_phu/Tủ lạnh', '❄️ TỦ LẠNH', 'tbphu', 'Tủ lạnh')">Tủ lạnh</div>
             <div class="sub-item" onclick="loadData('tb_phu/Tủ âm sâu', '🧊 TỦ ÂM SÂU', 'tbphu', 'Tủ âm sâu')">Tủ âm sâu</div>
             <div class="sub-item" onclick="loadData('tb_phu/Nhiệt kế', '🌡️ NHIỆT KẾ HC', 'tbphu', 'Nhiệt kế')">Nhiệt kế HC</div>
-            <div class="sub-item" onclick="loadData('tb_phu/Nhiệt kế phòng', '🏠 NHIỆT KẾ PHÒNG', 'tbphu', 'Nhiệt kế phòng')">Nhiệt kế phòng</div>
-            <div class="sub-item" onclick="loadData('tb_phu/Tủ ATSH', '🛡️ TỦ ATSH', 'tbphu', 'Tủ ATSH')">Tủ ATSH</div>
             <div class="sub-item" onclick="loadData('tb_phu/Pipette', '🧪 PIPETTE', 'tbphu', 'Pipette')">Pipette</div>
-            <div class="sub-item" onclick="loadData('tb_phu/Nồi hấp', '♨️ NỒI HẤP', 'tbphu', 'Nồi hấp')">Nồi hấp</div>
-            <div class="sub-item" onclick="loadData('tb_phu/Tủ ấm', '📦 TỦ ẤM', 'tbphu', 'Tủ ấm')">Tủ ấm</div>
+            <div class="sub-item" onclick="loadData('tb_phu/Cân điện tử', '⚖️ CÂN ĐIỆN TỬ', 'tbphu', 'Cân điện tử')">Cân điện tử</div>
+            <div class="sub-item" onclick="loadData('tb_phu/Máy cất nước', '💧 MÁY CẤT NƯỚC', 'tbphu', 'Máy cất nước')">Máy cất nước</div>
+            <div class="sub-item" onclick="loadData('tb_phu/Bể cách thủy', '♨️ BỂ CÁCH THỦY', 'tbphu', 'Bể cách thủy')">Bể cách thủy</div>
+            <div class="sub-item" onclick="loadData('tb_phu/Kính hiển vi', '🔬 KÍNH HIỂN VI', 'tbphu', 'Kính hiển vi')">Kính hiển vi</div>
             <div class="sub-item" onclick="loadData('tb_phu/Khác', '➕ THIẾT BỊ KHÁC', 'tbphu', 'Khác')">Khác</div>
         </div>
 
+        <div class="menu-item" style="background: #059669;" onclick="loadData('tb_ngoai', '🚛 THIẾT BỊ NGOÀI DỰ ÁN', 'tbngoai')"><i class="fas fa-truck-loading"></i> <span>TB NGOÀI DỰ ÁN</span></div>
+
         <div class="nav-label">Hoạt động chuyên môn</div>
-        <div class="menu-item" style="color: #fbbf24;" onclick="loadData('ke_hoach/Goc', '📅 KẾ HOẠCH GỐC', 'kehoach')">
-            <i class="fas fa-calendar-check"></i> <b>Kế Hoạch Gốc</b>
-        </div>
+        <div class="menu-item" style="color: #fbbf24;" onclick="loadData('ke_hoach/Goc', '📅 KẾ HOẠCH GỐC', 'kehoach')"><i class="fas fa-calendar-check"></i> <b>Kế Hoạch Gốc</b></div>
         <div id="archive_kh_list"></div>
-        <div class="menu-item" style="color: #34d399;" onclick="loadData('kq_hieu_chuan/Goc', '📊 KẾT QUẢ GỐC', 'kqhc')">
-            <i class="fas fa-chart-line"></i> <b>Kết Quả Gốc</b>
-        </div>
+        <div class="menu-item" style="color: #34d399;" onclick="loadData('kq_hieu_chuan/Goc', '📊 KẾT QUẢ GỐC', 'kqhc')"><i class="fas fa-chart-line"></i> <b>Kết Quả Gốc</b></div>
         <div id="archive_kq_list"></div>
     </div>
 </div>
 
 <div class="main">
-    <div class="header-card">
-        <h1 id="title" style="margin:0;">Hệ Thống Quản Lý Khoa XN</h1>
-        <p style="margin: 10px 0 0; opacity: 0.9;">Bệnh viện Ung Bướu TP.HCM - Cơ sở 2</p>
-    </div>
-
+    <div class="header-card"><h1 id="title" style="margin:0;">Hệ Thống Quản Lý Khoa XN</h1><p style="margin: 10px 0 0; opacity: 0.9;">Bệnh viện Ung Bướu TP.HCM - Cơ sở 2</p></div>
     <div class="content-box">
         <div class="toolbar">
             <button class="btn btn-add" onclick="addRowAtPosition()"><i class="fas fa-plus"></i> Thêm Dòng</button>
@@ -150,43 +118,42 @@
             <button id="btn-sync" class="btn btn-sync" onclick="manualSync()"><i class="fas fa-sync-alt"></i> LÀM MỚI DANH MỤC</button>
             <button id="btn-snap-kh" class="btn btn-save" style="display:none;" onclick="saveSnapshot('ke_hoach', 'KH')"><i class="fas fa-calendar-check"></i> Chốt Kế Hoạch</button>
             <button id="btn-snap-kq" class="btn btn-save" style="display:none;" onclick="saveSnapshot('kq_hieu_chuan', 'KQ')"><i class="fas fa-check-double"></i> Chốt Kết Quả</button>
-            
-            <div class="search-container">
-                <i class="fas fa-search"></i>
-                <input type="text" id="search" class="search-input" placeholder="Tìm kiếm..." oninput="render()">
-            </div>
+            <div class="search-container"><i class="fas fa-search"></i><input type="text" id="search" class="search-input" placeholder="Tìm kiếm..." oninput="render()"></div>
         </div>
         <div class="table-container">
-            <table><thead id="thead"></thead><tbody id="tbody"></tbody></table>
+            <table>
+                <thead id="thead"></thead>
+                <tbody id="tbody"></tbody>
+            </table>
         </div>
+        <p style="font-size: 11px; color: #64748b; margin-top: 10px;">* HD: Click 1 lần (Chọn ô để Ctrl+V), Click đúp (Sửa chữ). Mặc định: Mới 100%.</p>
     </div>
 </div>
 
 <script>
 let currentMode="", currentKey="", currentGroup="", currentData=[];
-let selectedIndex = -1;
-let isSyncing = false;
-
-const GROUPS_CHINH = ["Huyết học", "Miễn dịch", "Sinh hóa", "Vi sinh", "SHPT"];
-const GROUPS_PHU = ["Máy ly tâm", "Tủ lạnh", "Tủ âm sâu", "Nhiệt kế", "Nhiệt kế phòng", "Tủ ATSH", "Pipette", "Nồi hấp", "Tủ ấm", "Khác"];
+let selectedRowIndex = -1, selectedColIndex = -1, isSyncing = false;
+const MANAGER_DEFAULT = "Trương Công Hậu (0934187801)";
+const STATUS_DEFAULT = "Mới 100%";
 
 const COLS = {
     dstong: ["Nhóm","Mã thiết bị","Tên thiết bị","Model","Serial","Vị trí","Sản xuất","Cung ứng","Liên hệ","Phụ trách"],
     tbchinh: ["Nhóm","Mã thiết bị","Tên thiết bị","Model","Serial","Vị trí","Sản xuất","Cung ứng","Liên hệ","Tình trạng","Phụ trách"],
     dstongphu: ["Nhóm","Mã thiết bị","Tên thiết bị","Chủng loại","Serial","Nhà sản xuất","Nước","Ngày lắp","Vị trí","Tình trạng"],
     tbphu: ["Nhóm","Mã thiết bị","Tên thiết bị","Chủng loại","Serial","Nhà sản xuất","Nước","Ngày lắp","Vị trí","Tình trạng"],
+    tbngoai: ["Mã thiết bị","Tên thiết bị","Model","Serial","Vị trí","Sản xuất","Cung ứng","Liên hệ","Tình trạng","Phụ trách"],
     kqhc: ["Mã thiết bị","Tên thiết bị","Model","Serial","Ngày hiệu chuẩn","Ngày tiếp theo","Kết quả","Đơn vị","Ghi chú"],
     kehoach: ["Mã thiết bị","Tên thiết bị","Serial","Thời gian thực hiện","Nội dung yêu cầu","Tiêu chí chấp nhận","Ghi chú"]
 };
 
 function toggleSubmenu(id, element) {
-    const sub = document.getElementById(id);
-    sub.style.display = sub.style.display === "block" ? "none" : "block";
+    const sub = document.getElementById(id); sub.style.display = sub.style.display === "block" ? "none" : "block";
     element.querySelector('.arrow').classList.toggle('rotated');
 }
 
 function loadData(key, title, mode, group = "") {
-    currentKey = key; currentMode = mode; currentGroup = group; selectedIndex = -1;
+    currentKey = key; currentMode = mode; currentGroup = group; 
+    selectedRowIndex = -1; selectedColIndex = -1;
     document.getElementById("title").innerText = title;
     document.getElementById("btn-sync").style.display = (mode === 'dstong' || mode === 'dstongphu') ? "flex" : "none";
     document.getElementById("btn-snap-kh").style.display = (key === 'ke_hoach/Goc') ? "flex" : "none";
@@ -194,8 +161,8 @@ function loadData(key, title, mode, group = "") {
 
     window.dbOnValue(window.dbRef(window.db, window.dbPath + key), (snap) => {
         if (isSyncing) return;
-        const val = snap.val();
-        currentData = val ? (Array.isArray(val) ? val : Object.values(val)) : [];
+        const val = snap.val(); 
+        currentData = val ? (Array.isArray(val) ? val.filter(i => i !== null) : Object.values(val).filter(i => i !== null)) : [];
         render();
     });
 }
@@ -204,105 +171,149 @@ function render() {
     const cols = COLS[currentMode] || [];
     const q = (document.getElementById("search")?.value || "").toLowerCase();
     const tbody = document.getElementById("tbody");
-    document.getElementById("thead").innerHTML = `<tr><th style="width:50px">STT</th>${cols.map(c => `<th>${c}</th>`).join("")}<th style="width:50px">Xóa</th></tr>`;
+    
+    document.getElementById("thead").innerHTML = `<tr><th style="width:50px">STT</th>${cols.map(c => `<th>${c}</th>`).join("")}${currentMode==='tbngoai'?'<th style="width:50px">Trả</th>':''}<th style="width:50px">Xóa</th></tr>`;
     tbody.innerHTML = "";
     
-    currentData.forEach((row, index) => {
+    currentData.forEach((row, rIdx) => {
         if (!row) return; 
         if(q && !Object.values(row).some(v => String(v).toLowerCase().includes(q))) return;
-        
-        const tr = document.createElement("tr");
-        if (index === selectedIndex) tr.classList.add('selected');
-        tr.onclick = () => { selectedIndex = index; document.querySelectorAll('tr').forEach(r => r.classList.remove('selected')); tr.classList.add('selected'); };
 
-        let html = `<td>${index+1}</td>`;
-        cols.forEach((c, colIndex) => {
-            const isReadonly = (c === "Nhóm" && (currentMode === 'tbchinh' || currentMode === 'tbphu')) ? 'contenteditable="false" style="background:#f8fafc;"' : 'contenteditable="true"';
-            html += `<td ${isReadonly} onblur="updateCell(${index},'${c}',this.innerText)" onpaste="handlePaste(event, ${index}, ${colIndex})">${row[c]||""}</td>`;
+        const tr = document.createElement("tr");
+        if (row._returned) tr.className = "returned";
+
+        let html = `<td>${rIdx+1}<div class="return-overlay">ĐÃ TRẢ MÁY</div></td>`;
+        
+        cols.forEach((c, cIdx) => {
+            html += `<td 
+                contenteditable="false" 
+                class="${(rIdx === selectedRowIndex && cIdx === selectedColIndex) ? 'cell-selected' : ''}"
+                onmousedown="selectCell(${rIdx}, ${cIdx}, this)"
+                ondblclick="this.contentEditable=true; this.focus()"
+                onblur="this.contentEditable=false; updateCell(${rIdx},'${c}',this.innerText)"
+                >${row[c] || ""}</td>`;
         });
-        html += `<td><i class="fas fa-trash-alt" style="color:#f87171; cursor:pointer" onclick="deleteRow(${index})"></i></td>`;
+        
+        if (currentMode === 'tbngoai') {
+            html += `<td><i class="fas ${row._returned?'fa-eye-slash':'fa-eye'}" style="color:#3b82f6; cursor:pointer" onclick="toggleReturn(${rIdx})"></i></td>`;
+        }
+        html += `<td><i class="fas fa-trash-alt" style="color:#f87171; cursor:pointer" onclick="deleteRow(${rIdx})"></i></td>`;
         tr.innerHTML = html;
         tbody.appendChild(tr);
     });
 }
 
-// HÀM ĐỒNG BỘ ĐÃ ĐƯỢC SỬA LỖI SINH HÓA/MIỄN DỊCH
-async function manualSync() {
-    if(!confirm("Đồng bộ dữ liệu xuống các nhóm con?")) return;
-    isSyncing = true;
-    const btn = document.getElementById("btn-sync");
-    btn.disabled = true; btn.innerText = "Đang xử lý...";
-
-    try {
-        if (currentMode === 'dstong') await syncAll('dstong', 'tb_chinh', GROUPS_CHINH);
-        if (currentMode === 'dstongphu') await syncAll('dstongphu', 'tb_phu', GROUPS_PHU);
-        alert("Đồng bộ thành công!");
-    } catch (e) {
-        alert("Lỗi: " + e.message);
-    } finally {
-        isSyncing = false;
-        btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt"></i> LÀM MỚI DANH MỤC';
-        render();
-    }
+function selectCell(rIdx, cIdx, el) {
+    selectedRowIndex = rIdx; selectedColIndex = cIdx;
+    document.querySelectorAll('td').forEach(td => td.classList.remove('cell-selected'));
+    el.classList.add('cell-selected');
 }
 
-async function syncAll(masterMode, folder, groups) {
-    let buckets = {};
-    groups.forEach(g => buckets[g] = []);
-    
-    currentData.forEach(item => {
-        if (!item) return;
-        // CHUẨN HÓA DỮ LIỆU CỘT NHÓM ĐỂ SO KHỚP CHÍNH XÁC
-        const itemGrp = (item["Nhóm"] || "").trim().toLowerCase();
-        
-        // Tìm nhóm tương ứng trong danh sách chuẩn (ví dụ itemGrp là "sinh hoá" vẫn khớp "Sinh hóa")
-        let found = groups.find(g => g.trim().toLowerCase() === itemGrp);
-        
-        if (found) {
-            let row = {};
-            const subCols = COLS[masterMode === 'dstong' ? 'tbchinh' : 'tbphu'];
-            subCols.forEach(c => row[c] = item[c] || "");
-            row["Nhóm"] = found; // Gán lại tên nhóm chuẩn (có hoa/thường chuẩn)
-            buckets[found].push(row);
+// HÀM QUAN TRỌNG: Sửa logic để luôn ưu tiên "Mới 100%"
+function formatStatus(val) {
+    if (!val) return STATUS_DEFAULT;
+    let clean = val.toString().trim();
+    if (clean === "" || clean === "1" || clean === "1%") return STATUS_DEFAULT; 
+    if (clean === "100" || clean === "100%" || clean.toLowerCase() === "mới 100%") return STATUS_DEFAULT;
+    if (!isNaN(clean)) return clean + "%";
+    return clean;
+}
+
+document.addEventListener('paste', (e) => {
+    if (selectedRowIndex !== -1) {
+        const active = document.activeElement;
+        if (active.tagName !== 'TD' || active.contentEditable === 'false') {
+            e.preventDefault();
+            const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+            handleDataPaste(text);
         }
-    });
-
-    // Lưu từng nhóm vào Firebase
-    for (const g of groups) {
-        await safeSave(`${folder}/${g}`, buckets[g]);
     }
-}
+});
 
-async function handlePaste(e, startRowIdx, startColIdx) {
-    e.preventDefault();
-    const text = (e.clipboardData || window.clipboardData).getData('text/plain');
-    if (!text) return;
-    const rows = text.split(/\r\n|\n|\r/).filter(row => row.length > 0);
+async function handleDataPaste(text) {
+    if (!text || selectedRowIndex === -1) return;
+    const rows = text.split(/\r?\n/).filter(line => line.trim().length > 0);
     const colsList = COLS[currentMode];
+
     rows.forEach((rowText, rOffset) => {
-        let currentRowIdx = startRowIdx + rOffset;
-        if (currentRowIdx < currentData.length) {
-            const cellValues = rowText.split('\t');
-            cellValues.forEach((val, cOffset) => {
-                let currentColIdx = startColIdx + cOffset;
-                if (currentColIdx < colsList.length) {
-                    let colName = colsList[currentColIdx];
-                    if (!(colName === "Nhóm" && (currentMode === 'tbchinh' || currentMode === 'tbphu'))) {
-                        currentData[currentRowIdx][colName] = val.trim();
-                    }
-                }
+        let targetRowIdx = selectedRowIndex + rOffset;
+        if (targetRowIdx >= currentData.length) {
+            let newObj = {};
+            colsList.forEach(c => {
+                newObj[c] = (c === "Nhóm") ? currentGroup : (c === "Phụ trách" ? MANAGER_DEFAULT : (c === "Tình trạng" ? STATUS_DEFAULT : ""));
             });
+            currentData.push(newObj);
         }
+        const cells = rowText.split('\t');
+        cells.forEach((val, cOffset) => {
+            let targetColIdx = selectedColIndex + cOffset;
+            if (targetColIdx < colsList.length) {
+                let colName = colsList[targetColIdx];
+                if (!(colName === "Nhóm" && (currentMode === 'tbchinh' || currentMode === 'tbphu'))) {
+                    let finalVal = val.trim().replace(/^"|"$/g, ''); 
+                    if (colName === "Tình trạng") finalVal = formatStatus(finalVal);
+                    currentData[targetRowIdx][colName] = finalVal;
+                }
+            }
+        });
     });
     await safeSave(currentKey, currentData);
     render();
 }
 
+document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key === 'c' && selectedRowIndex !== -1 && document.activeElement.tagName !== 'TD') {
+        const colName = COLS[currentMode][selectedColIndex];
+        const value = currentData[selectedRowIndex][colName] || "";
+        navigator.clipboard.writeText(value);
+    }
+    if (e.key === 'Enter' && selectedRowIndex !== -1) {
+        const selectedEl = document.querySelector('.cell-selected');
+        if (selectedEl && selectedEl.contentEditable !== 'true') {
+            e.preventDefault();
+            selectedEl.contentEditable = 'true';
+            selectedEl.focus();
+        }
+    }
+});
+
+async function linkDataByMaTB(index, maTB) {
+    if (!maTB) return;
+    const paths = ["ds_tong", "ds_tong_phu"];
+    for (const p of paths) {
+        const snap = await window.dbGet(window.dbRef(window.db, window.dbPath + p));
+        const allData = snap.val() || [];
+        const found = Object.values(allData).find(item => item && item["Mã thiết bị"] === maTB);
+        if (found) {
+            currentData[index]["Tên thiết bị"] = found["Tên thiết bị"] || "";
+            currentData[index]["Model"] = found["Model"] || found["Chủng loại"] || "";
+            currentData[index]["Serial"] = found["Serial"] || "";
+            currentData[index]["Vị trí"] = found["Vị trí"] || "";
+            currentData[index]["Sản xuất"] = found["Sản xuất"] || found["Nhà sản xuất"] || "";
+            currentData[index]["Cung ứng"] = found["Cung ứng"] || "";
+            currentData[index]["Liên hệ"] = found["Liên hệ"] || "";
+            currentData[index]["Tình trạng"] = found["Tình trạng"] || STATUS_DEFAULT;
+            currentData[index]["Phụ trách"] = found["Phụ trách"] || MANAGER_DEFAULT;
+            break;
+        }
+    }
+}
+
 async function updateCell(index, col, val) {
-    const newVal = val.trim();
-    if (currentData[index][col] === newVal) return;
-    currentData[index][col] = newVal;
+    let newVal = val.trim();
+    if (col === "Tình trạng") newVal = formatStatus(newVal);
+    if (col === "Phụ trách" && newVal === "") newVal = MANAGER_DEFAULT;
+    
+    currentData[index][col] = newVal; 
+    if (currentMode === 'tbngoai' && col === "Mã thiết bị") await linkDataByMaTB(index, newVal);
     await safeSave(currentKey, currentData);
+    if (col === "Tình trạng" || col === "Mã thiết bị") render();
+}
+
+async function toggleReturn(index) {
+    currentData[index]._returned = !currentData[index]._returned;
+    await safeSave(currentKey, currentData);
+    render();
 }
 
 async function safeSave(key, data) {
@@ -312,24 +323,51 @@ async function safeSave(key, data) {
 
 async function addRowAtPosition() {
     let obj = {}; 
-    COLS[currentMode].forEach(c => obj[c] = (c === "Nhóm" ? currentGroup : ""));
-    if (selectedIndex !== -1) currentData.splice(selectedIndex + 1, 0, obj);
+    COLS[currentMode].forEach(c => {
+        obj[c] = (c === "Nhóm") ? currentGroup : (c === "Phụ trách" ? MANAGER_DEFAULT : (c === "Tình trạng" ? STATUS_DEFAULT : ""));
+    });
+    if (selectedRowIndex !== -1) currentData.splice(selectedRowIndex + 1, 0, obj);
     else currentData.push(obj);
     await safeSave(currentKey, currentData);
 }
 
 async function deleteRow(index) {
     if(!confirm("Xác nhận xóa?")) return;
-    currentData.splice(index, 1); selectedIndex = -1;
-    await safeSave(currentKey, currentData);
+    currentData.splice(index, 1); selectedRowIndex = -1; await safeSave(currentKey, currentData);
 }
 
-async function saveSnapshot(folder, prefix) {
-    const d = new Date();
-    const name = prompt("Tên phiên bản lưu:", `${prefix}_${d.getDate()}-${d.getMonth()+1}-${d.getFullYear()}`);
-    if(!name) return;
-    const dataCopy = JSON.parse(JSON.stringify(currentData.filter(i => i !== null)));
-    await safeSave(`${folder}/Archives/${name}`, dataCopy);
+async function manualSync() {
+    if(!confirm("Đồng bộ dữ liệu?")) return;
+    isSyncing = true;
+    const btn = document.getElementById("btn-sync"); btn.disabled = true; btn.innerText = "Đang xử lý...";
+    try {
+        const folder = currentMode === 'dstong' ? 'tb_chinh' : 'tb_phu';
+        const groups = currentMode === 'dstong' 
+            ? ["Huyết học", "Miễn dịch", "Sinh hóa", "Vi sinh", "SHPT"] 
+            : ["Máy ly tâm", "Tủ lạnh", "Tủ âm sâu", "Nhiệt kế", "Pipette", "Cân điện tử", "Máy cất nước", "Bể cách thủy", "Kính hiển vi", "Khác"];
+            
+        for (const g of groups) {
+            const snap = await window.dbGet(window.dbRef(window.db, window.dbPath + `${folder}/${g}`));
+            let childData = snap.val() || [];
+            if (!Array.isArray(childData)) childData = Object.values(childData);
+            let masterItems = currentData.filter(item => item && (item["Nhóm"] || "").trim().toLowerCase() === g.toLowerCase());
+            let newChildData = masterItems.map(mItem => {
+                const maTB = mItem["Mã thiết bị"];
+                const existingItem = childData.find(cItem => cItem && cItem["Mã thiết bị"] === maTB);
+                if (existingItem) return { ...existingItem, ...mItem, Nhóm: g };
+                return { ...mItem, Nhóm: g };
+            });
+            await safeSave(`${folder}/${g}`, newChildData);
+        }
+        alert("Đồng bộ thành công!");
+    } catch (e) { alert("Lỗi: " + e.message); }
+    finally { isSyncing = false; btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt"></i> LÀM MỚI DANH MỤC'; render(); }
+}
+
+function exportExcel() {
+    const ws = XLSX.utils.json_to_sheet(currentData.filter(i => i !== null));
+    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Dữ liệu");
+    XLSX.writeFile(wb, `LabData_${new Date().getTime()}.xlsx`);
 }
 
 function initArchives() {
@@ -353,13 +391,6 @@ async function renameArchive(f, oldK) {
     const newK = prompt("Tên mới:", oldK); if(!newK || newK === oldK) return;
     const oldRef = window.dbRef(window.db, window.dbPath + `${f}/Archives/${oldK}`);
     window.dbOnValue(oldRef, async (snap) => { await window.dbSet(window.dbRef(window.db, window.dbPath + `${f}/Archives/${newK}`), snap.val()); await window.dbRemove(oldRef); }, { onlyOnce: true });
-}
-
-function exportExcel() {
-    const ws = XLSX.utils.json_to_sheet(currentData.filter(i => i !== null));
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Dữ liệu");
-    XLSX.writeFile(wb, `LabData_${new Date().getTime()}.xlsx`);
 }
 
 window.onload = () => { initArchives(); loadData('ds_tong', '📦 TỔNG THIẾT BỊ CHÍNH', 'dstong'); };
