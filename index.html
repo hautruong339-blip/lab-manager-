@@ -60,6 +60,43 @@
         td.cell-selected { box-shadow: inset 0 0 0 2px #3b82f6 !important; background: #eff6ff !important; z-index: 5; }
         .arrow { font-size: 10px; transition: 0.3s; margin-left: auto; }
         .rotated { transform: rotate(90deg); }
+
+        /* --- PHẦN CSS TRẠNG THÁI TRẢ MÁY --- */
+        tr { position: relative; }
+        
+        /* Chỉ làm mờ các ô dữ liệu chính */
+        .row-returned td:not(:last-child):not(:nth-last-child(2)) { 
+            opacity: 0.15; 
+            pointer-events: none; 
+        }
+
+        /* Chữ nằm gọn trong khung dòng, không làm bung ô */
+        .returned-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #b91c1c; 
+            font-weight: 800;
+            font-size: 13px; /* Kích thước vừa phải để không bung dòng */
+            white-space: nowrap;
+            z-index: 5;
+            pointer-events: none;
+            letter-spacing: 2px;
+            background: rgba(255, 255, 255, 0.7); /* Nền mờ để dễ đọc chữ đỏ */
+            padding: 2px 10px;
+            border-radius: 4px;
+            border: 1px solid #fca5a5;
+        }
+
+        .eye-btn {
+            font-size: 14px;
+            cursor: pointer;
+            transition: 0.2s;
+            position: relative;
+            z-index: 10;
+        }
+        .eye-btn:hover { color: #1e3a8a !important; }
     </style>
 </head>
 
@@ -127,7 +164,6 @@
 <script>
 let currentMode="", currentKey="", currentGroup="", currentData=[];
 let selectedRowIndex = -1, selectedColIndex = -1, isSyncing = false;
-const MANAGER_DEFAULT = "Trương Công Hậu (0934187801)";
 const STATUS_DEFAULT = "Mới 100%";
 
 const COLS = {
@@ -165,15 +201,25 @@ function render() {
     const q = (document.getElementById("search")?.value || "").toLowerCase();
     const tbody = document.getElementById("tbody");
     
-    document.getElementById("thead").innerHTML = `<tr><th style="width:50px">STT</th>${cols.map(c => `<th>${c}</th>`).join("")}<th style="width:50px">Xóa</th></tr>`;
+    let eyeHeader = currentMode === 'tbngoai' ? `<th style="width:40px">Ẩn</th>` : '';
+    document.getElementById("thead").innerHTML = `<tr><th style="width:50px">STT</th>${cols.map(c => `<th>${c}</th>`).join("")}${eyeHeader}<th style="width:50px">Xóa</th></tr>`;
     tbody.innerHTML = "";
     
     currentData.forEach((row, rIdx) => {
         if (!row) return; 
         if(q && !Object.values(row).some(v => String(v).toLowerCase().includes(q))) return;
 
+        const isReturned = row.daTraMay === true;
         const tr = document.createElement("tr");
+        if(isReturned && currentMode === 'tbngoai') tr.className = "row-returned";
+
         let html = `<td>${rIdx+1}</td>`;
+        
+        // Chèn Overlay chữ ĐÃ TRẢ MÁY gọn gàng
+        if(isReturned && currentMode === 'tbngoai') {
+            html += `<div class="returned-overlay">ĐÃ TRẢ MÁY</div>`;
+        }
+
         cols.forEach((c, cIdx) => {
             html += `<td 
                 contenteditable="false" 
@@ -183,10 +229,23 @@ function render() {
                 onblur="this.contentEditable=false; updateCell(${rIdx},'${c}',this.innerText)"
                 >${row[c] || ""}</td>`;
         });
+
+        if(currentMode === 'tbngoai') {
+            html += `<td><i class="fas ${isReturned ? 'fa-eye-slash' : 'fa-eye'} eye-btn" 
+                        style="color:${isReturned ? '#ef4444' : '#3b82f6'}" 
+                        onclick="toggleReturnStatus(${rIdx})"></i></td>`;
+        }
+
         html += `<td><i class="fas fa-trash-alt" style="color:#f87171; cursor:pointer" onclick="deleteRow(${rIdx})"></i></td>`;
         tr.innerHTML = html;
         tbody.appendChild(tr);
     });
+}
+
+async function toggleReturnStatus(index) {
+    currentData[index].daTraMay = !currentData[index].daTraMay;
+    await safeSave(currentKey, currentData);
+    render();
 }
 
 function selectCell(rIdx, cIdx, el) {
@@ -195,15 +254,11 @@ function selectCell(rIdx, cIdx, el) {
     el.classList.add('cell-selected');
 }
 
-// FIX TRIỆT ĐỂ LỖI DÁN 1 Ô VÀ COPY NỘI BỘ
 document.addEventListener('paste', async (e) => {
     if (selectedRowIndex === -1) return;
-    
-    // Nếu đang nhấp đúp (ô đang gõ) thì KHÔNG can thiệp, để trình duyệt dán tự nhiên vào ô đó
     const active = document.activeElement;
     if (active.tagName === 'TD' && active.contentEditable === 'true') return;
 
-    // Chế độ "Dán thông minh" khi chỉ click 1 lần (viền xanh)
     e.preventDefault();
     const text = (e.clipboardData || window.clipboardData).getData('text/plain');
     if (!text) return;
@@ -215,7 +270,6 @@ document.addEventListener('paste', async (e) => {
         let targetR = selectedRowIndex + r;
         let cellValues = rows[r].split('\t');
 
-        // Tự thêm dòng nếu Excel dài hơn bảng
         if (targetR >= currentData.length) {
             let emptyObj = {};
             colsList.forEach(c => emptyObj[c] = (c === "Nhóm") ? currentGroup : "");
@@ -227,24 +281,17 @@ document.addEventListener('paste', async (e) => {
             if (targetC < colsList.length) {
                 let colName = colsList[targetC];
                 let value = cellValues[c].trim().replace(/^"|"$/g, '');
-                
-                // Mặc định Tình trạng mới 100% nếu giá trị dán vào rỗng
                 if (colName === "Tình trạng" && !value) value = STATUS_DEFAULT;
-                
                 currentData[targetR][colName] = value;
-
-                // Nếu dán vào Mã TB, tự link data
                 if (colName === "Mã thiết bị") await linkDataFromMaster(targetR, value);
             }
         }
     }
-
     await safeSave(currentKey, currentData);
     if (currentMode === 'kehoach') await syncKHtoKQ();
     render();
 });
 
-// COPY CLICK 1 LẦN (Ctrl+C)
 document.addEventListener('keydown', (e) => {
     if (e.ctrlKey && e.key === 'c' && selectedRowIndex !== -1) {
         if (document.activeElement.tagName !== 'TD' || document.activeElement.contentEditable !== 'true') {
