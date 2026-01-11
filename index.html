@@ -120,6 +120,7 @@
                 <tbody id="tbody"></tbody>
             </table>
         </div>
+        <p style="font-size: 11px; color: #64748b; margin-top: 10px;">* HD: Click 1 lần (Chọn ô để Ctrl+V), Click đúp (Sửa chữ). Mặc định: Mới 100%.</p>
     </div>
 </div>
 
@@ -132,7 +133,7 @@ const STATUS_DEFAULT = "Mới 100%";
 const COLS = {
     dstong: ["Nhóm","Mã thiết bị","Tên thiết bị","Model","Serial","Vị trí","Sản xuất","Cung ứng","Liên hệ","Phụ trách"],
     tbchinh: ["Nhóm","Mã thiết bị","Tên thiết bị","Model","Serial","Vị trí","Sản xuất","Cung ứng","Liên hệ","Tình trạng","Phụ trách"],
-    dstongphu: ["Nhóm","Mã thiết bị","Tên thiết bị","Chủng loại","Serial","Nhà sản xuất","Nước","Ngày lắp","Vị trí","Tình trạng"],
+    dstongphu: ["Nhóm","Mã thiết thiết bị","Tên thiết bị","Chủng loại","Serial","Nhà sản xuất","Nước","Ngày lắp","Vị trí","Tình trạng"],
     tbphu: ["Nhóm","Mã thiết bị","Tên thiết bị","Chủng loại","Serial","Nhà sản xuất","Nước","Ngày lắp","Vị trí","Tình trạng"],
     tbngoai: ["Mã thiết bị","Tên thiết bị","Model","Serial","Vị trí","Sản xuất","Cung ứng","Liên hệ","Tình trạng","Phụ trách"],
     kqhc: ["Mã thiết bị","Tên thiết bị","Model","Serial","Ngày hiệu chuẩn","Ngày tiếp theo","Kết quả","Đơn vị","Ghi chú"],
@@ -194,6 +195,65 @@ function selectCell(rIdx, cIdx, el) {
     el.classList.add('cell-selected');
 }
 
+// FIX TRIỆT ĐỂ LỖI DÁN 1 Ô VÀ COPY NỘI BỘ
+document.addEventListener('paste', async (e) => {
+    if (selectedRowIndex === -1) return;
+    
+    // Nếu đang nhấp đúp (ô đang gõ) thì KHÔNG can thiệp, để trình duyệt dán tự nhiên vào ô đó
+    const active = document.activeElement;
+    if (active.tagName === 'TD' && active.contentEditable === 'true') return;
+
+    // Chế độ "Dán thông minh" khi chỉ click 1 lần (viền xanh)
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+    if (!text) return;
+
+    const rows = text.split(/\r?\n/).filter(line => line.trim().length > 0);
+    const colsList = COLS[currentMode];
+
+    for (let r = 0; r < rows.length; r++) {
+        let targetR = selectedRowIndex + r;
+        let cellValues = rows[r].split('\t');
+
+        // Tự thêm dòng nếu Excel dài hơn bảng
+        if (targetR >= currentData.length) {
+            let emptyObj = {};
+            colsList.forEach(c => emptyObj[c] = (c === "Nhóm") ? currentGroup : "");
+            currentData.push(emptyObj);
+        }
+
+        for (let c = 0; c < cellValues.length; c++) {
+            let targetC = selectedColIndex + c;
+            if (targetC < colsList.length) {
+                let colName = colsList[targetC];
+                let value = cellValues[c].trim().replace(/^"|"$/g, '');
+                
+                // Mặc định Tình trạng mới 100% nếu giá trị dán vào rỗng
+                if (colName === "Tình trạng" && !value) value = STATUS_DEFAULT;
+                
+                currentData[targetR][colName] = value;
+
+                // Nếu dán vào Mã TB, tự link data
+                if (colName === "Mã thiết bị") await linkDataFromMaster(targetR, value);
+            }
+        }
+    }
+
+    await safeSave(currentKey, currentData);
+    if (currentMode === 'kehoach') await syncKHtoKQ();
+    render();
+});
+
+// COPY CLICK 1 LẦN (Ctrl+C)
+document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key === 'c' && selectedRowIndex !== -1) {
+        if (document.activeElement.tagName !== 'TD' || document.activeElement.contentEditable !== 'true') {
+            const val = currentData[selectedRowIndex][COLS[currentMode][selectedColIndex]] || "";
+            navigator.clipboard.writeText(val);
+        }
+    }
+});
+
 async function linkDataFromMaster(index, maTB) {
     if (!maTB) return;
     const paths = ["ds_tong", "ds_tong_phu"];
@@ -202,39 +262,13 @@ async function linkDataFromMaster(index, maTB) {
         const allData = snap.val() || [];
         const found = Object.values(allData).find(item => item && item["Mã thiết bị"] === maTB);
         if (found) {
-            currentData[index]["Tên thiết bị"] = found["Tên thiết thiết bị"] || found["Tên thiết bị"] || "";
+            currentData[index]["Tên thiết bị"] = found["Tên thiết bị"] || "";
             currentData[index]["Serial"] = found["Serial"] || "";
             if (currentMode === 'kqhc') {
                 currentData[index]["Model"] = found["Model"] || found["Chủng loại"] || "";
             }
             break;
         }
-    }
-}
-
-// HÀM CHỐT DỮ LIỆU ĐỘC LẬP HOÀN TOÀN
-async function saveSnapshotAll() {
-    if (currentData.length === 0) { alert("Không có dữ liệu để chốt!"); return; }
-    
-    const name = prompt("Nhập tên bản lưu (VD: Kế hoạch Tháng 07):");
-    if (!name) return;
-
-    try {
-        // 1. CHỤP LẠI DỮ LIỆU KH HIỆN TẠI (Đã có trong currentData)
-        // Dùng JSON.parse(JSON.stringify()) để cắt đứt mọi kết nối dữ liệu, tạo bản sao thuần túy
-        const snapshotKH = JSON.parse(JSON.stringify(currentData));
-
-        // 2. LẤY DỮ LIỆU KQ HIỆN TẠI TỪ DATABASE
-        const snapKQ = await window.dbGet(window.dbRef(window.db, window.dbPath + 'kq_hieu_chuan/Goc'));
-        const snapshotKQ = snapKQ.val() ? JSON.parse(JSON.stringify(snapKQ.val())) : [];
-
-        // 3. LƯU VÀO ARCHIVES (Bản lưu con)
-        await window.dbSet(window.dbRef(window.db, window.dbPath + `ke_hoach/Archives/${name}`), snapshotKH);
-        await window.dbSet(window.dbRef(window.db, window.dbPath + `kq_hieu_chuan/Archives/${name}`), snapshotKQ);
-
-        alert(`Đã chốt thành công bản lưu: ${name}. Ô con này giờ đây là độc lập!`);
-    } catch (error) {
-        alert("Lỗi khi chốt: " + error.message);
     }
 }
 
@@ -259,11 +293,23 @@ async function syncKHtoKQ() {
 
 async function updateCell(index, col, val) {
     let newVal = val.trim();
+    if (col === "Tình trạng" && (newVal === "" || newVal === "1%")) newVal = STATUS_DEFAULT;
     currentData[index][col] = newVal; 
     if (col === "Mã thiết bị") await linkDataFromMaster(index, newVal);
     await safeSave(currentKey, currentData);
     if (currentMode === 'kehoach') await syncKHtoKQ();
     render();
+}
+
+async function saveSnapshotAll() {
+    if (currentData.length === 0) return;
+    const name = prompt("Tên bản lưu:"); if (!name) return;
+    const snapKH = JSON.parse(JSON.stringify(currentData));
+    const snapKQRaw = await window.dbGet(window.dbRef(window.db, window.dbPath + 'kq_hieu_chuan/Goc'));
+    const snapKQ = snapKQRaw.val() ? JSON.parse(JSON.stringify(snapKQRaw.val())) : [];
+    await window.dbSet(window.dbRef(window.db, window.dbPath + `ke_hoach/Archives/${name}`), snapKH);
+    await window.dbSet(window.dbRef(window.db, window.dbPath + `kq_hieu_chuan/Archives/${name}`), snapKQ);
+    alert("Đã chốt!");
 }
 
 async function safeSave(key, data) {
@@ -273,7 +319,9 @@ async function safeSave(key, data) {
 
 async function addRowAtPosition() {
     let obj = {}; 
-    COLS[currentMode].forEach(c => { obj[c] = ""; });
+    COLS[currentMode].forEach(c => { 
+        obj[c] = (c === "Nhóm") ? currentGroup : (c === "Tình trạng" ? STATUS_DEFAULT : ""); 
+    });
     if (selectedRowIndex !== -1) currentData.splice(selectedRowIndex + 1, 0, obj);
     else currentData.push(obj);
     await safeSave(currentKey, currentData);
@@ -292,28 +340,25 @@ async function deleteRow(index) {
 async function manualSync() {
     if(!confirm("Đồng bộ danh mục?")) return;
     isSyncing = true;
-    const btn = document.getElementById("btn-sync"); btn.disabled = true; btn.innerText = "Đang xử lý...";
+    const btn = document.getElementById("btn-sync"); btn.disabled = true;
     try {
         const folder = currentMode === 'dstong' ? 'tb_chinh' : 'tb_phu';
-        const groups = currentMode === 'dstong' 
-            ? ["Huyết học", "Miễn dịch", "Sinh hóa", "Vi sinh", "SHPT"] 
-            : ["Máy ly tâm", "Tủ lạnh", "Tủ âm sâu", "Nhiệt kế", "Pipette", "Cân điện tử", "Máy cất nước", "Bể cách thủy", "Kính hiển vi", "Khác"];
-            
+        const groups = currentMode === 'dstong' ? ["Huyết học", "Miễn dịch", "Sinh hóa", "Vi sinh", "SHPT"] : ["Máy ly tâm", "Tủ lạnh", "Tủ âm sâu", "Nhiệt kế", "Pipette", "Cân điện tử", "Máy cất nước", "Bể cách thủy", "Kính hiển vi", "Khác"];
         for (const g of groups) {
             const snap = await window.dbGet(window.dbRef(window.db, window.dbPath + `${folder}/${g}`));
             let childData = snap.val() || [];
             if (!Array.isArray(childData)) childData = Object.values(childData);
             let masterItems = currentData.filter(item => item && (item["Nhóm"] || "").trim().toLowerCase() === g.toLowerCase());
             let newChildData = masterItems.map(mItem => {
-                const maTB = mItem["Mã thiết bị"] || mItem["Mã thiết thiết bị"];
+                const maTB = mItem["Mã thiết bị"];
                 const existingItem = childData.find(cItem => cItem && cItem["Mã thiết bị"] === maTB);
                 return { ...(existingItem || {}), ...mItem, Nhóm: g };
             });
             await safeSave(`${folder}/${g}`, newChildData);
         }
-        alert("Đồng bộ thành công!");
+        alert("Thành công!");
     } catch (e) { alert("Lỗi: " + e.message); }
-    finally { isSyncing = false; btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt"></i> LÀM MỚI DANH MỤC'; render(); }
+    finally { isSyncing = false; btn.disabled = false; render(); }
 }
 
 function exportExcel() {
