@@ -61,42 +61,21 @@
         .arrow { font-size: 10px; transition: 0.3s; margin-left: auto; }
         .rotated { transform: rotate(90deg); }
 
-        /* --- PHẦN CSS TRẠNG THÁI TRẢ MÁY --- */
-        tr { position: relative; }
-        
-        /* Chỉ làm mờ các ô dữ liệu chính */
-        .row-returned td:not(:last-child):not(:nth-last-child(2)) { 
-            opacity: 0.15; 
-            pointer-events: none; 
+        /* --- CSS TỐI GIẢN CHO TRẢ MÁY --- */
+        .row-returned td { 
+            opacity: 0.3; 
+            color: #94a3b8;
         }
-
-        /* Chữ nằm gọn trong khung dòng, không làm bung ô */
-        .returned-overlay {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #b91c1c; 
-            font-weight: 800;
-            font-size: 13px; /* Kích thước vừa phải để không bung dòng */
-            white-space: nowrap;
-            z-index: 5;
-            pointer-events: none;
-            letter-spacing: 2px;
-            background: rgba(255, 255, 255, 0.7); /* Nền mờ để dễ đọc chữ đỏ */
-            padding: 2px 10px;
-            border-radius: 4px;
-            border: 1px solid #fca5a5;
+        /* Chỉ cột Tên thiết bị hiện chữ đỏ khi đã trả */
+        .row-returned .cell-returned-text {
+            color: #ef4444 !important;
+            font-weight: bold;
+            opacity: 1 !important;
+            text-transform: uppercase;
+            font-size: 11px;
         }
-
-        .eye-btn {
-            font-size: 14px;
-            cursor: pointer;
-            transition: 0.2s;
-            position: relative;
-            z-index: 10;
-        }
-        .eye-btn:hover { color: #1e3a8a !important; }
+        .eye-btn { cursor: pointer; transition: 0.2s; }
+        .eye-btn:hover { transform: scale(1.2); }
     </style>
 </head>
 
@@ -214,29 +193,33 @@ function render() {
         if(isReturned && currentMode === 'tbngoai') tr.className = "row-returned";
 
         let html = `<td>${rIdx+1}</td>`;
-        
-        // Chèn Overlay chữ ĐÃ TRẢ MÁY gọn gàng
-        if(isReturned && currentMode === 'tbngoai') {
-            html += `<div class="returned-overlay">ĐÃ TRẢ MÁY</div>`;
-        }
 
         cols.forEach((c, cIdx) => {
+            let cellValue = row[c] || "";
+            let cellClass = "";
+            
+            // Nếu đã trả máy và đang ở cột Tên thiết bị, thay đổi nội dung hiển thị
+            if(isReturned && currentMode === 'tbngoai' && c === "Tên thiết bị") {
+                cellValue = "ĐÃ TRẢ MÁY";
+                cellClass = "cell-returned-text";
+            }
+
             html += `<td 
                 contenteditable="false" 
-                class="${(rIdx === selectedRowIndex && cIdx === selectedColIndex) ? 'cell-selected' : ''}"
+                class="${(rIdx === selectedRowIndex && cIdx === selectedColIndex) ? 'cell-selected' : ''} ${cellClass}"
                 onmousedown="selectCell(${rIdx}, ${cIdx}, this)"
                 ondblclick="this.contentEditable=true; this.focus()"
                 onblur="this.contentEditable=false; updateCell(${rIdx},'${c}',this.innerText)"
-                >${row[c] || ""}</td>`;
+                >${cellValue}</td>`;
         });
 
         if(currentMode === 'tbngoai') {
             html += `<td><i class="fas ${isReturned ? 'fa-eye-slash' : 'fa-eye'} eye-btn" 
-                        style="color:${isReturned ? '#ef4444' : '#3b82f6'}" 
+                        style="color:${isReturned ? '#ef4444' : '#3b82f6'}; opacity: 1 !important;" 
                         onclick="toggleReturnStatus(${rIdx})"></i></td>`;
         }
 
-        html += `<td><i class="fas fa-trash-alt" style="color:#f87171; cursor:pointer" onclick="deleteRow(${rIdx})"></i></td>`;
+        html += `<td><i class="fas fa-trash-alt" style="color:#f87171; cursor:pointer; opacity: 1 !important;" onclick="deleteRow(${rIdx})"></i></td>`;
         tr.innerHTML = html;
         tbody.appendChild(tr);
     });
