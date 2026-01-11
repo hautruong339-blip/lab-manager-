@@ -57,12 +57,7 @@
         table { width: 100%; border-collapse: collapse; background: white; font-size: 12px; table-layout: auto; }
         th { background: #f8fafc; padding: 12px; position: sticky; top: 0; z-index: 10; border-bottom: 2px solid #e2e8f0; white-space: nowrap; user-select: none; }
         td { padding: 10px; border-bottom: 1px solid #f1f5f9; text-align: center; min-width: 80px; position: relative; white-space: pre-wrap; outline: none !important; transition: 0.1s; cursor: cell; }
-        
         td.cell-selected { box-shadow: inset 0 0 0 2px #3b82f6 !important; background: #eff6ff !important; z-index: 5; }
-
-        tr.returned { opacity: 0.4; filter: grayscale(0.8); background: #fee2e2 !important; }
-        .return-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #dc2626; font-weight: 900; font-size: 14px; pointer-events: none; z-index: 10; display: none; text-transform: uppercase; }
-        tr.returned .return-overlay { display: block; }
         .arrow { font-size: 10px; transition: 0.3s; margin-left: auto; }
         .rotated { transform: rotate(90deg); }
     </style>
@@ -116,8 +111,7 @@
             <button class="btn btn-add" onclick="addRowAtPosition()"><i class="fas fa-plus"></i> Thêm Dòng</button>
             <button class="btn btn-excel" onclick="exportExcel()"><i class="fas fa-file-excel"></i> Xuất Excel</button>
             <button id="btn-sync" class="btn btn-sync" onclick="manualSync()"><i class="fas fa-sync-alt"></i> LÀM MỚI DANH MỤC</button>
-            <button id="btn-snap-kh" class="btn btn-save" style="display:none;" onclick="saveSnapshot('ke_hoach', 'KH')"><i class="fas fa-calendar-check"></i> Chốt Kế Hoạch</button>
-            <button id="btn-snap-kq" class="btn btn-save" style="display:none;" onclick="saveSnapshot('kq_hieu_chuan', 'KQ')"><i class="fas fa-check-double"></i> Chốt Kết Quả</button>
+            <button id="btn-snap-kh" class="btn btn-save" style="display:none;" onclick="saveSnapshotAll()"><i class="fas fa-save"></i> CHỐT DỮ LIỆU</button>
             <div class="search-container"><i class="fas fa-search"></i><input type="text" id="search" class="search-input" placeholder="Tìm kiếm..." oninput="render()"></div>
         </div>
         <div class="table-container">
@@ -126,7 +120,6 @@
                 <tbody id="tbody"></tbody>
             </table>
         </div>
-        <p style="font-size: 11px; color: #64748b; margin-top: 10px;">* HD: Click 1 lần (Chọn ô để Ctrl+V), Click đúp (Sửa chữ). Mặc định: Mới 100%.</p>
     </div>
 </div>
 
@@ -157,7 +150,6 @@ function loadData(key, title, mode, group = "") {
     document.getElementById("title").innerText = title;
     document.getElementById("btn-sync").style.display = (mode === 'dstong' || mode === 'dstongphu') ? "flex" : "none";
     document.getElementById("btn-snap-kh").style.display = (key === 'ke_hoach/Goc') ? "flex" : "none";
-    document.getElementById("btn-snap-kq").style.display = (key === 'kq_hieu_chuan/Goc') ? "flex" : "none";
 
     window.dbOnValue(window.dbRef(window.db, window.dbPath + key), (snap) => {
         if (isSyncing) return;
@@ -172,7 +164,7 @@ function render() {
     const q = (document.getElementById("search")?.value || "").toLowerCase();
     const tbody = document.getElementById("tbody");
     
-    document.getElementById("thead").innerHTML = `<tr><th style="width:50px">STT</th>${cols.map(c => `<th>${c}</th>`).join("")}${currentMode==='tbngoai'?'<th style="width:50px">Trả</th>':''}<th style="width:50px">Xóa</th></tr>`;
+    document.getElementById("thead").innerHTML = `<tr><th style="width:50px">STT</th>${cols.map(c => `<th>${c}</th>`).join("")}<th style="width:50px">Xóa</th></tr>`;
     tbody.innerHTML = "";
     
     currentData.forEach((row, rIdx) => {
@@ -180,10 +172,7 @@ function render() {
         if(q && !Object.values(row).some(v => String(v).toLowerCase().includes(q))) return;
 
         const tr = document.createElement("tr");
-        if (row._returned) tr.className = "returned";
-
-        let html = `<td>${rIdx+1}<div class="return-overlay">ĐÃ TRẢ MÁY</div></td>`;
-        
+        let html = `<td>${rIdx+1}</td>`;
         cols.forEach((c, cIdx) => {
             html += `<td 
                 contenteditable="false" 
@@ -193,10 +182,6 @@ function render() {
                 onblur="this.contentEditable=false; updateCell(${rIdx},'${c}',this.innerText)"
                 >${row[c] || ""}</td>`;
         });
-        
-        if (currentMode === 'tbngoai') {
-            html += `<td><i class="fas ${row._returned?'fa-eye-slash':'fa-eye'}" style="color:#3b82f6; cursor:pointer" onclick="toggleReturn(${rIdx})"></i></td>`;
-        }
         html += `<td><i class="fas fa-trash-alt" style="color:#f87171; cursor:pointer" onclick="deleteRow(${rIdx})"></i></td>`;
         tr.innerHTML = html;
         tbody.appendChild(tr);
@@ -209,75 +194,7 @@ function selectCell(rIdx, cIdx, el) {
     el.classList.add('cell-selected');
 }
 
-// HÀM QUAN TRỌNG: Sửa logic để luôn ưu tiên "Mới 100%"
-function formatStatus(val) {
-    if (!val) return STATUS_DEFAULT;
-    let clean = val.toString().trim();
-    if (clean === "" || clean === "1" || clean === "1%") return STATUS_DEFAULT; 
-    if (clean === "100" || clean === "100%" || clean.toLowerCase() === "mới 100%") return STATUS_DEFAULT;
-    if (!isNaN(clean)) return clean + "%";
-    return clean;
-}
-
-document.addEventListener('paste', (e) => {
-    if (selectedRowIndex !== -1) {
-        const active = document.activeElement;
-        if (active.tagName !== 'TD' || active.contentEditable === 'false') {
-            e.preventDefault();
-            const text = (e.clipboardData || window.clipboardData).getData('text/plain');
-            handleDataPaste(text);
-        }
-    }
-});
-
-async function handleDataPaste(text) {
-    if (!text || selectedRowIndex === -1) return;
-    const rows = text.split(/\r?\n/).filter(line => line.trim().length > 0);
-    const colsList = COLS[currentMode];
-
-    rows.forEach((rowText, rOffset) => {
-        let targetRowIdx = selectedRowIndex + rOffset;
-        if (targetRowIdx >= currentData.length) {
-            let newObj = {};
-            colsList.forEach(c => {
-                newObj[c] = (c === "Nhóm") ? currentGroup : (c === "Phụ trách" ? MANAGER_DEFAULT : (c === "Tình trạng" ? STATUS_DEFAULT : ""));
-            });
-            currentData.push(newObj);
-        }
-        const cells = rowText.split('\t');
-        cells.forEach((val, cOffset) => {
-            let targetColIdx = selectedColIndex + cOffset;
-            if (targetColIdx < colsList.length) {
-                let colName = colsList[targetColIdx];
-                if (!(colName === "Nhóm" && (currentMode === 'tbchinh' || currentMode === 'tbphu'))) {
-                    let finalVal = val.trim().replace(/^"|"$/g, ''); 
-                    if (colName === "Tình trạng") finalVal = formatStatus(finalVal);
-                    currentData[targetRowIdx][colName] = finalVal;
-                }
-            }
-        });
-    });
-    await safeSave(currentKey, currentData);
-    render();
-}
-
-document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.key === 'c' && selectedRowIndex !== -1 && document.activeElement.tagName !== 'TD') {
-        const colName = COLS[currentMode][selectedColIndex];
-        const value = currentData[selectedRowIndex][colName] || "";
-        navigator.clipboard.writeText(value);
-    }
-    if (e.key === 'Enter' && selectedRowIndex !== -1) {
-        const selectedEl = document.querySelector('.cell-selected');
-        if (selectedEl && selectedEl.contentEditable !== 'true') {
-            e.preventDefault();
-            selectedEl.contentEditable = 'true';
-            selectedEl.focus();
-        }
-    }
-});
-
-async function linkDataByMaTB(index, maTB) {
+async function linkDataFromMaster(index, maTB) {
     if (!maTB) return;
     const paths = ["ds_tong", "ds_tong_phu"];
     for (const p of paths) {
@@ -285,59 +202,95 @@ async function linkDataByMaTB(index, maTB) {
         const allData = snap.val() || [];
         const found = Object.values(allData).find(item => item && item["Mã thiết bị"] === maTB);
         if (found) {
-            currentData[index]["Tên thiết bị"] = found["Tên thiết bị"] || "";
-            currentData[index]["Model"] = found["Model"] || found["Chủng loại"] || "";
+            currentData[index]["Tên thiết bị"] = found["Tên thiết thiết bị"] || found["Tên thiết bị"] || "";
             currentData[index]["Serial"] = found["Serial"] || "";
-            currentData[index]["Vị trí"] = found["Vị trí"] || "";
-            currentData[index]["Sản xuất"] = found["Sản xuất"] || found["Nhà sản xuất"] || "";
-            currentData[index]["Cung ứng"] = found["Cung ứng"] || "";
-            currentData[index]["Liên hệ"] = found["Liên hệ"] || "";
-            currentData[index]["Tình trạng"] = found["Tình trạng"] || STATUS_DEFAULT;
-            currentData[index]["Phụ trách"] = found["Phụ trách"] || MANAGER_DEFAULT;
+            if (currentMode === 'kqhc') {
+                currentData[index]["Model"] = found["Model"] || found["Chủng loại"] || "";
+            }
             break;
         }
     }
 }
 
-async function updateCell(index, col, val) {
-    let newVal = val.trim();
-    if (col === "Tình trạng") newVal = formatStatus(newVal);
-    if (col === "Phụ trách" && newVal === "") newVal = MANAGER_DEFAULT;
+// HÀM CHỐT DỮ LIỆU ĐỘC LẬP HOÀN TOÀN
+async function saveSnapshotAll() {
+    if (currentData.length === 0) { alert("Không có dữ liệu để chốt!"); return; }
     
-    currentData[index][col] = newVal; 
-    if (currentMode === 'tbngoai' && col === "Mã thiết bị") await linkDataByMaTB(index, newVal);
-    await safeSave(currentKey, currentData);
-    if (col === "Tình trạng" || col === "Mã thiết bị") render();
+    const name = prompt("Nhập tên bản lưu (VD: Kế hoạch Tháng 07):");
+    if (!name) return;
+
+    try {
+        // 1. CHỤP LẠI DỮ LIỆU KH HIỆN TẠI (Đã có trong currentData)
+        // Dùng JSON.parse(JSON.stringify()) để cắt đứt mọi kết nối dữ liệu, tạo bản sao thuần túy
+        const snapshotKH = JSON.parse(JSON.stringify(currentData));
+
+        // 2. LẤY DỮ LIỆU KQ HIỆN TẠI TỪ DATABASE
+        const snapKQ = await window.dbGet(window.dbRef(window.db, window.dbPath + 'kq_hieu_chuan/Goc'));
+        const snapshotKQ = snapKQ.val() ? JSON.parse(JSON.stringify(snapKQ.val())) : [];
+
+        // 3. LƯU VÀO ARCHIVES (Bản lưu con)
+        await window.dbSet(window.dbRef(window.db, window.dbPath + `ke_hoach/Archives/${name}`), snapshotKH);
+        await window.dbSet(window.dbRef(window.db, window.dbPath + `kq_hieu_chuan/Archives/${name}`), snapshotKQ);
+
+        alert(`Đã chốt thành công bản lưu: ${name}. Ô con này giờ đây là độc lập!`);
+    } catch (error) {
+        alert("Lỗi khi chốt: " + error.message);
+    }
 }
 
-async function toggleReturn(index) {
-    currentData[index]._returned = !currentData[index]._returned;
+async function syncKHtoKQ() {
+    if (currentKey !== 'ke_hoach/Goc') return;
+    const snapKQ = await window.dbGet(window.dbRef(window.db, window.dbPath + 'kq_hieu_chuan/Goc'));
+    let dataKQ = snapKQ.val() || [];
+    if (!Array.isArray(dataKQ)) dataKQ = Object.values(dataKQ);
+
+    let newDataKQ = currentData.map((khItem, idx) => {
+        let oldKQ = dataKQ[idx] || {};
+        return {
+            ...oldKQ,
+            "Mã thiết bị": khItem["Mã thiết bị"] || "",
+            "Tên thiết bị": khItem["Tên thiết bị"] || "",
+            "Serial": khItem["Serial"] || "",
+            "Model": khItem["Model"] || oldKQ["Model"] || ""
+        };
+    });
+    await window.dbSet(window.dbRef(window.db, window.dbPath + 'kq_hieu_chuan/Goc'), newDataKQ);
+}
+
+async function updateCell(index, col, val) {
+    let newVal = val.trim();
+    currentData[index][col] = newVal; 
+    if (col === "Mã thiết bị") await linkDataFromMaster(index, newVal);
     await safeSave(currentKey, currentData);
+    if (currentMode === 'kehoach') await syncKHtoKQ();
     render();
 }
 
 async function safeSave(key, data) {
-    const cleanData = data.filter(item => item !== null);
+    const cleanData = JSON.parse(JSON.stringify(data.filter(item => item !== null)));
     await window.dbSet(window.dbRef(window.db, window.dbPath + key), cleanData);
 }
 
 async function addRowAtPosition() {
     let obj = {}; 
-    COLS[currentMode].forEach(c => {
-        obj[c] = (c === "Nhóm") ? currentGroup : (c === "Phụ trách" ? MANAGER_DEFAULT : (c === "Tình trạng" ? STATUS_DEFAULT : ""));
-    });
+    COLS[currentMode].forEach(c => { obj[c] = ""; });
     if (selectedRowIndex !== -1) currentData.splice(selectedRowIndex + 1, 0, obj);
     else currentData.push(obj);
     await safeSave(currentKey, currentData);
+    if (currentMode === 'kehoach') await syncKHtoKQ();
+    render();
 }
 
 async function deleteRow(index) {
     if(!confirm("Xác nhận xóa?")) return;
-    currentData.splice(index, 1); selectedRowIndex = -1; await safeSave(currentKey, currentData);
+    currentData.splice(index, 1);
+    await safeSave(currentKey, currentData);
+    if (currentMode === 'kehoach') await syncKHtoKQ();
+    render();
 }
 
 async function manualSync() {
-    if(!confirm("Đồng bộ dữ liệu?")) return;
+    if(!confirm("Đồng bộ danh mục?")) return;
     isSyncing = true;
     const btn = document.getElementById("btn-sync"); btn.disabled = true; btn.innerText = "Đang xử lý...";
     try {
@@ -352,10 +305,9 @@ async function manualSync() {
             if (!Array.isArray(childData)) childData = Object.values(childData);
             let masterItems = currentData.filter(item => item && (item["Nhóm"] || "").trim().toLowerCase() === g.toLowerCase());
             let newChildData = masterItems.map(mItem => {
-                const maTB = mItem["Mã thiết bị"];
+                const maTB = mItem["Mã thiết bị"] || mItem["Mã thiết thiết bị"];
                 const existingItem = childData.find(cItem => cItem && cItem["Mã thiết bị"] === maTB);
-                if (existingItem) return { ...existingItem, ...mItem, Nhóm: g };
-                return { ...mItem, Nhóm: g };
+                return { ...(existingItem || {}), ...mItem, Nhóm: g };
             });
             await safeSave(`${folder}/${g}`, newChildData);
         }
